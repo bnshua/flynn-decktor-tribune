@@ -1,6 +1,7 @@
 interface ComicSlot {
   title: string;
   caption?: string;
+  imageUrl?: string;
 }
 
 interface ComicsSectionProps {
@@ -24,16 +25,26 @@ const ComicsSection = ({ comics }: ComicsSectionProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {displayComics.map((comic, index) => {
           const isEmpty = comic.title === "EMPTY";
+          const hasImage = comic.imageUrl && comic.imageUrl.length > 0;
+          
           return (
             <div key={index} className="border border-rule">
-              {/* Comic placeholder box */}
-              <div className="aspect-[4/3] bg-sepia/30 flex items-center justify-center border-b border-rule">
-                <div className="text-center p-4">
-                  <span className="font-headline text-4xl text-ink-light">✎</span>
-                  <p className="font-body text-sm text-ink-light italic mt-2">
-                    [Illustration Here]
-                  </p>
-                </div>
+              {/* Comic image or placeholder */}
+              <div className="aspect-[4/3] bg-sepia/30 flex items-center justify-center border-b border-rule overflow-hidden">
+                {hasImage ? (
+                  <img 
+                    src={comic.imageUrl} 
+                    alt={comic.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-4">
+                    <span className="font-headline text-4xl text-ink-light">✎</span>
+                    <p className="font-body text-sm text-ink-light italic mt-2">
+                      [Illustration Here]
+                    </p>
+                  </div>
+                )}
               </div>
               {/* Caption */}
               <div className="p-3 text-center">
