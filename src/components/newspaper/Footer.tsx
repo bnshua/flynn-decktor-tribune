@@ -4,7 +4,7 @@ const Footer = () => {
       <div className="text-center">
         <div className="ornament">❦</div>
         <p className="font-headline text-lg italic text-ink-light">
-          The Rhys-Decktor Tribune
+          The Flynn-Decktor Tribune
         </p>
         <p className="font-body text-sm text-ink-light mt-2">
           Published Daily • All Rights Reserved

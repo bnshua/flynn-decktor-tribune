@@ -18,7 +18,7 @@ const Masthead = () => {
       <div className="relative">
         <div className="ornament">❦</div>
         <h1 className="font-masthead text-5xl md:text-7xl lg:text-8xl tracking-wide text-headline leading-tight">
-          Rhys-Decktor Tribune
+          Flynn-Decktor Tribune
         </h1>
         <p className="font-headline text-lg md:text-xl italic text-ink-light mt-2">
           "All the News That's Fit to Print"
