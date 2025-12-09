@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      letter_submissions: {
+        Row: {
+          author_location: string | null
+          author_name: string
+          id: string
+          is_approved: boolean
+          is_featured: boolean
+          letter_content: string
+          submitted_at: string
+        }
+        Insert: {
+          author_location?: string | null
+          author_name: string
+          id?: string
+          is_approved?: boolean
+          is_featured?: boolean
+          letter_content: string
+          submitted_at?: string
+        }
+        Update: {
+          author_location?: string | null
+          author_name?: string
+          id?: string
+          is_approved?: boolean
+          is_featured?: boolean
+          letter_content?: string
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       newspaper_editions: {
         Row: {
           content: Json
