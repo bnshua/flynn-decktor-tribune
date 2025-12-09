@@ -1,0 +1,7 @@
+project_id = "xhyeuouonsqfbmxamfam"
+
+[functions.generate-newspaper]
+verify_jwt = false
+
+[functions.get-newspaper]
+verify_jwt = false
