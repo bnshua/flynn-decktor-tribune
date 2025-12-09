@@ -116,8 +116,9 @@ const Index = () => {
   const handleGenerateNew = async () => {
     setIsGenerating(true);
     toast({
-      title: "Generating new edition...",
-      description: "Our AI reporters are hard at work. This may take a moment.",
+      title: "🗞️ Printing new edition...",
+      description: "Our unhinged AI reporters are crafting satirical stories and generating editorial cartoons. This takes about 30-60 seconds.",
+      duration: 60000,
     });
 
     const success = await generateNewEdition();
@@ -125,13 +126,13 @@ const Index = () => {
     if (success) {
       await loadEdition();
       toast({
-        title: "Fresh off the press!",
-        description: "A new edition has been generated.",
+        title: "📰 EXTRA! EXTRA!",
+        description: "A fresh edition of absolute chaos is hot off the press!",
       });
     } else {
       toast({
-        title: "Generation failed",
-        description: "Could not generate a new edition. Please try again.",
+        title: "Press malfunction!",
+        description: "The printing press caught fire (metaphorically). Please try again.",
         variant: "destructive",
       });
     }
@@ -139,12 +140,30 @@ const Index = () => {
     setIsGenerating(false);
   };
 
-  if (isLoading) {
+  if (isLoading || isGenerating) {
     return (
       <div className="min-h-screen bg-paper paper-texture flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto text-ink-light" />
-          <p className="font-headline text-xl mt-4 text-ink-light">Loading today's edition...</p>
+        <div className="text-center max-w-md px-4">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto text-ink" />
+          <h2 className="font-masthead text-3xl mt-6 text-headline">
+            {isGenerating ? "Printing Fresh Edition..." : "Loading Today's Tribune..."}
+          </h2>
+          {isGenerating && (
+            <div className="mt-4 space-y-2">
+              <p className="font-body text-lg text-ink-light">
+                Our AI reporters are working frantically:
+              </p>
+              <ul className="font-body text-sm text-ink-light italic space-y-1">
+                <li>✍️ Crafting unhinged headlines...</li>
+                <li>🎨 Drawing editorial cartoons...</li>
+                <li>💀 Writing satirical obituaries...</li>
+                <li>🐍 Formulating snake oil ads...</li>
+              </ul>
+              <p className="font-body text-xs text-ink-light mt-4">
+                This typically takes 30-60 seconds
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );

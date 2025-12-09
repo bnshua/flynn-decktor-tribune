@@ -10,7 +10,7 @@ export interface NewspaperContent {
   sports: Array<{ headline: string; content: string; byline?: string }>;
   weather: { temperature: string; conditions: string; forecast: string };
   classifieds: Array<{ title: string; text: string }>;
-  comics: Array<{ title: string; caption: string }>;
+  comics: Array<{ title: string; caption: string; imageUrl?: string; imagePrompt?: string }>;
   vintageAds: Array<{ headline: string; tagline: string; description: string; price: string }>;
   obituaries: Array<{ name: string; dates: string; description: string; survivors?: string }>;
 }
