@@ -277,6 +277,8 @@ serve(async (req) => {
     let content;
     try {
       let jsonText = generatedText.trim();
+      
+      // Remove markdown code blocks
       if (jsonText.startsWith('```json')) {
         jsonText = jsonText.slice(7);
       } else if (jsonText.startsWith('```')) {
@@ -285,9 +287,65 @@ serve(async (req) => {
       if (jsonText.endsWith('```')) {
         jsonText = jsonText.slice(0, -3);
       }
-      content = JSON.parse(jsonText.trim());
+      jsonText = jsonText.trim();
+      
+      // Sanitize control characters inside strings that break JSON parsing
+      // Replace literal newlines, tabs, and other control chars inside string values
+      jsonText = jsonText
+        .replace(/[\x00-\x1F\x7F]/g, (char: string) => {
+          // Keep actual structural newlines between JSON elements
+          if (char === '\n' || char === '\r' || char === '\t') {
+            return char;
+          }
+          // Remove other control characters
+          return '';
+        });
+      
+      // Try to fix common issues: unescaped newlines inside strings
+      // This regex finds strings and escapes newlines within them
+      let inString = false;
+      let escaped = false;
+      let result = '';
+      
+      for (let i = 0; i < jsonText.length; i++) {
+        const char = jsonText[i];
+        
+        if (escaped) {
+          result += char;
+          escaped = false;
+          continue;
+        }
+        
+        if (char === '\\') {
+          escaped = true;
+          result += char;
+          continue;
+        }
+        
+        if (char === '"') {
+          inString = !inString;
+          result += char;
+          continue;
+        }
+        
+        if (inString && (char === '\n' || char === '\r')) {
+          // Escape newlines inside strings
+          result += char === '\n' ? '\\n' : '\\r';
+          continue;
+        }
+        
+        if (inString && char === '\t') {
+          result += '\\t';
+          continue;
+        }
+        
+        result += char;
+      }
+      
+      content = JSON.parse(result);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
+      console.error('First 500 chars of response:', generatedText.substring(0, 500));
       throw new Error('Failed to parse AI-generated content as JSON');
     }
 
