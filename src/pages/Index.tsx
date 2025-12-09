@@ -8,6 +8,25 @@ import ClassifiedsBox from "@/components/newspaper/ClassifiedsBox";
 import Footer from "@/components/newspaper/Footer";
 
 const Index = () => {
+  const breakingNews = [
+    { 
+      time: "2:14 a.m.", 
+      content: 'Mysterious plume of glitter seen rising from abandoned disco on 8th Street. Authorities blame "rogue wedding planner."'
+    },
+    { 
+      time: "6:47 a.m.", 
+      content: "Local man claims his Roomba achieved sentience, unionized with the other appliances, and is demanding dental." 
+    },
+  ];
+
+  const classifieds = [
+    { title: "FOR SALE", text: "One slightly used moral compass. Spins freely. $5 OBO." },
+    { title: "LOST", text: "My last remaining cope. Last seen heading south for the winter." },
+    { title: "REWARD", text: "$500 for information leading to the recovery of 2020–2024. No questions asked." },
+    { title: "HELP WANTED", text: "Night security guard for abandoned Chuck E. Cheese. Must be comfortable with animatronics that whisper Latin." },
+    { title: "PERSONALS", text: "SWM seeking anyone who still remembers Blockbuster late fees. Let us reminisce and cry." },
+  ];
+
   return (
     <div className="min-h-screen bg-paper paper-texture">
       <div className="container max-w-6xl mx-auto px-4 py-6">
@@ -15,7 +34,7 @@ const Index = () => {
         <Masthead />
 
         {/* Breaking News Banner */}
-        <BreakingNews />
+        <BreakingNews items={breakingNews} />
 
         {/* Main Headlines Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -24,19 +43,29 @@ const Index = () => {
             <HeadlineSlot 
               number={1}
               size="large"
+              headline="CITY HALL IN CHAOS AS MAYOR DEKTOR ACCIDENTALLY LIVE-STREAMS 47-MINUTE ARGUMENT WITH HIS CAT"
+              subheadline={'"Mr. Whiskers refuses to endorse budget proposal," claims visibly exhausted mayor'}
+              content={'In what officials are calling "the most watched municipal broadcast since the sewer main exploded on Channel 4," Mayor Theodore Dektor inadvertently left his webcam running during what was supposed to be a private budget review session. Viewers across the city watched in mounting disbelief as the mayor spent nearly an hour attempting to negotiate fiscal policy with his 14-pound tabby, Mr. Whiskers. "He just kept knocking the spreadsheets off the desk," a clearly shaken Dektor told reporters. "I think he is in the pocket of Big Catnip." City Hall has declined to comment on whether Mr. Whiskers will face an ethics inquiry.'}
             />
             <div className="newspaper-rule-thick my-4" />
             <HeadlineSlot 
               number={2}
               size="medium"
+              headline="GENERAL FLYNN SPOTTED LEADING FLASH-MOB PATRIOTIC LINE-DANCE OUTSIDE WHOLE FOODS"
+              subheadline="Witnesses report participants formed perfect flying wedge; organic kale sales up 400%"
+              content={'Shoppers at the downtown Whole Foods were treated to an unexpected display of synchronized patriotism yesterday when retired General Mike Flynn emerged from behind the bulk quinoa bins to lead approximately 200 participants in what eyewitnesses described as "the most aggressive square dance I have ever seen." The flash mob concluded with a 21-shopping-cart salute and the mass purchase of every American flag-themed reusable bag in stock. Store management has requested he give 24 hours notice next time.'}
             />
           </div>
 
           {/* Sidebar column */}
           <div className="lg:col-span-1 column-rule">
-            <WeatherBox />
+            <WeatherBox 
+              temperature="48°F"
+              conditions="Mostly cloudy with a 70% chance of existential dread"
+              forecast="Tomorrow: Sudden bursts of unearned optimism, followed by light sarcasm in the evening. Low: Whatever is left of your will to live."
+            />
             <div className="mt-6">
-              <ClassifiedsBox />
+              <ClassifiedsBox items={classifieds} />
             </div>
           </div>
         </div>
@@ -48,27 +77,62 @@ const Index = () => {
           {/* Local Affairs */}
           <div>
             <Section title="Local Affairs">
-              <ArticleSlot />
+              <ArticleSlot 
+                headline={"City Council Votes to Make 'Reply-All' E-Mail Chains a Felony"}
+                content="The measure passed 5-4 after a 412-message thread about parking signs crashed municipal servers. Councilwoman Jenkins cast the deciding vote while still receiving notifications from the original thread."
+              />
               <div className="newspaper-rule my-3" />
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="Beloved Hot-Dog Cart Shut Down by Health Department"
+                content={'The popular vendor "Frank & Sense," known for philosophical condiment recommendations, was closed for "excessive existentialism." Owner maintains the sauerkraut was merely asking uncomfortable questions.'}
+              />
+              <div className="newspaper-rule my-3" />
+              <ArticleSlot 
+                headline="Annual Christmas Tree Files Restraining Order Against Pigeons"
+                content={'The 40-foot Norway spruce arrived in Civic Plaza Tuesday and immediately retained legal counsel. "My client has been through this before," said attorney Gerald Finch. "She knows what is coming."'}
+              />
             </Section>
           </div>
 
           {/* World News */}
           <div className="md:column-rule">
             <Section title="World News">
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="EU Bans Memes Containing More Than Three Layers of Irony"
+                content="Black market for 2016-era rage comics has skyrocketed following the controversial ruling. Interpol reports a 600% increase in smuggled Pepe derivatives across the Swiss border."
+              />
               <div className="newspaper-rule my-3" />
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="Antarctic Penguins Begin Synchronized Swimming to ABBA"
+                content={'Researchers at McMurdo Station report the colony has been rehearsing routines to "Waterloo" for three weeks. "The choreography is honestly better than most cruise ships," noted Dr. Sarah Chen.'}
+              />
+              <div className="newspaper-rule my-3" />
+              <ArticleSlot 
+                headline="Middle East Peace Talks Stalled Over Hummus Pronunciation"
+                content="Delegates argued for six straight hours before agreeing to table the discussion. The correct pronunciation remains classified pending further diplomatic review."
+              />
             </Section>
           </div>
 
           {/* Opinion & Editorial */}
           <div className="lg:column-rule">
             <Section title="Opinion & Editorial">
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="Guest Op-Ed: Wake Up, Sheeple!"
+                byline="Gen. Mike Flynn (Ret.)"
+                content="The real deep state is your toaster. It knows when you burn the toast on purpose. It reports to the microwave. The microwave reports to forces I cannot name in print. Stay vigilant."
+              />
               <div className="newspaper-rule my-3" />
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="Counterpoint: The General Is Distracted Again"
+                byline="Mayor Theodore Dektor"
+                content="The General is distracted by shiny objects again. Also, his cat is clearly a Chinese asset. I have documentation. Mr. Whiskers, however, remains under investigation by my own office."
+              />
+              <div className="newspaper-rule my-3" />
+              <ArticleSlot 
+                headline="Letters to the Editor"
+                content={'"Dear Tribune, Why does my coffee taste like regret and Wi-Fi passwords?" — Concerned on Maple St.'}
+              />
             </Section>
           </div>
         </div>
@@ -80,18 +144,40 @@ const Index = () => {
           {/* Arts & Culture */}
           <div>
             <Section title="Arts & Culture">
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="Avant-Garde Play Sells Out in 11 Minutes"
+                content={'"Waiting for Godot 2: Godot Shows Up But He Is in a Bad Mood" has captivated audiences with its 4-hour runtime consisting entirely of one man sighing. Critics call it "devastatingly accurate."'}
+              />
               <div className="newspaper-rule my-3" />
-              <ArticleSlot />
+              <ArticleSlot 
+                headline={"Local Painter Unveils 40-Foot Mural Entitled '2025 So Far'"}
+                content={'The work consists entirely of one giant screaming emoji. The artist declined to comment but was seen weeping softly into a coffee cup labeled "HELP."'}
+              />
+              <div className="newspaper-rule my-3" />
+              <ArticleSlot 
+                headline="Indie Band Forced to Cancel Tour"
+                content={'"Supply Chain Issues" has postponed all dates after their drummer became literally stuck in the Panama Canal. Management says he is "comfortable but annoyed."'}
+              />
             </Section>
           </div>
 
           {/* Sports Dispatch */}
           <div className="md:column-rule">
             <Section title="Sports Dispatch">
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="Rivertown Rollers Claim Roller Derby Championship"
+                content={'The Rollers defeated the Iron City Anvils 34–12 in a match officials are calling "unnecessarily sparkly." MVP was awarded to the woman who weaponized a glitter bomb in the fourth quarter.'}
+              />
               <div className="newspaper-rule my-3" />
-              <ArticleSlot />
+              <ArticleSlot 
+                headline="High-School Chess Team Disqualified"
+                content={'Captain Jeremy Thornton declared during the state semifinals that "en passant is a psy-op designed to confuse patriots." The team has been banned pending psychological evaluation.'}
+              />
+              <div className="newspaper-rule my-3" />
+              <ArticleSlot 
+                headline="Local Man Still Insisting He Could Beat LeBron"
+                content={'Area resident Dale Hutchins, 54, maintains he could "totally" defeat LeBron James one-on-one, provided the court were "slightly downhill" and James had "maybe a mild cold."'}
+              />
             </Section>
           </div>
         </div>
