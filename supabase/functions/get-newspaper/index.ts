@@ -22,12 +22,22 @@ serve(async (req) => {
       .from('newspaper_editions')
       .select('*')
       .order('publish_date', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
     if (error) {
       console.error('Database error:', error);
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
+        error: 'Database error',
+        hasEdition: false 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!data || data.length === 0) {
+      console.log('No editions found');
+      return new Response(JSON.stringify({
         error: 'No edition found',
         hasEdition: false 
       }), {
@@ -36,15 +46,16 @@ serve(async (req) => {
       });
     }
 
-    console.log('Returning edition for:', data.publish_date);
+    const edition = data[0];
+    console.log('Returning edition for:', edition.publish_date);
 
     return new Response(JSON.stringify({
       hasEdition: true,
       edition: {
-        id: data.id,
-        publishDate: data.publish_date,
-        content: data.content,
-        generatedAt: data.generated_at,
+        id: edition.id,
+        publishDate: edition.publish_date,
+        content: edition.content,
+        generatedAt: edition.generated_at,
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
