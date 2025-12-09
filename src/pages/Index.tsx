@@ -5,6 +5,9 @@ import ArticleSlot from "@/components/newspaper/ArticleSlot";
 import BreakingNews from "@/components/newspaper/BreakingNews";
 import WeatherBox from "@/components/newspaper/WeatherBox";
 import ClassifiedsBox from "@/components/newspaper/ClassifiedsBox";
+import ComicsSection from "@/components/newspaper/ComicsSection";
+import VintageAds from "@/components/newspaper/VintageAds";
+import ObituariesSection from "@/components/newspaper/ObituariesSection";
 import Footer from "@/components/newspaper/Footer";
 
 const Index = () => {
@@ -25,6 +28,59 @@ const Index = () => {
     { title: "REWARD", text: "$500 for information leading to the recovery of 2020–2024. No questions asked." },
     { title: "HELP WANTED", text: "Night security guard for abandoned Chuck E. Cheese. Must be comfortable with animatronics that whisper Latin." },
     { title: "PERSONALS", text: "SWM seeking anyone who still remembers Blockbuster late fees. Let us reminisce and cry." },
+  ];
+
+  const comics = [
+    { 
+      title: "The Deep State Toaster", 
+      caption: "Gen. Flynn discovers the truth about kitchen appliances" 
+    },
+    { 
+      title: "Mr. Whiskers for Mayor", 
+      caption: "The cat finally announces his 2026 campaign" 
+    },
+  ];
+
+  const vintageAds = [
+    {
+      headline: "Dr. Pemberton's Miracle Elixir",
+      tagline: "For What Ails Ye!",
+      description: "Cures anxiety, existential dread, and the inexplicable urge to check your phone every 30 seconds. Made from genuine snake oil and concentrated optimism.",
+      price: "Only $1.99 per bottle!"
+    },
+    {
+      headline: "Professor Whiskers' Brain Tonic",
+      tagline: "Endorsed by One Mayoral Cat",
+      description: "Guaranteed to increase your political acumen by at least 47%. Side effects may include sudden urges to knock things off desks and stare judgmentally.",
+      price: "Three bottles for $5.00"
+    },
+    {
+      headline: "Flynn's Patriotic Foot Powder",
+      tagline: "For the Freedom-Loving Feet",
+      description: "Keep your feet dry during flash-mob line dances! Contains real American grit and a hint of organic kale extract. Not affiliated with any intelligence agencies.",
+      price: "$2.50 per tin"
+    },
+  ];
+
+  const obituaries = [
+    {
+      name: "Common Sense",
+      dates: "c. 3000 B.C. – 2020 A.D.",
+      description: "After a long and valiant struggle against social media algorithms, cable news, and reply-all email chains, Common Sense passed peacefully in its sleep. It is remembered for its brief but meaningful contributions to public discourse, parallel parking, and not microwaving metal.",
+      survivors: "Critical Thinking (estranged), Basic Decency (in hospice)"
+    },
+    {
+      name: "Civil Discourse",
+      dates: "1776 – 2016",
+      description: "Beloved by moderates and reasonable people everywhere, Civil Discourse succumbed to complications from Twitter and 24-hour news cycles. In lieu of flowers, please send strongly-worded but respectful letters to your local representative.",
+      survivors: "Polite Disagreement (missing), The Benefit of the Doubt (presumed deceased)"
+    },
+    {
+      name: "The Attention Span",
+      dates: "Unknown – 2007 (iPhone launch)",
+      description: "The Attention Span lived a full life before being tragically cut short by the invention of infinite scroll. Services will be held but attendees are expected to leave after approximately 8 seconds.",
+      survivors: "Goldfish Memory, TikTok"
+    },
   ];
 
   return (
@@ -181,6 +237,21 @@ const Index = () => {
             </Section>
           </div>
         </div>
+
+        <div className="newspaper-rule-thick my-6" />
+
+        {/* Editorial Cartoons */}
+        <ComicsSection comics={comics} />
+
+        <div className="newspaper-rule-thick my-6" />
+
+        {/* Vintage Advertisements */}
+        <VintageAds ads={vintageAds} />
+
+        <div className="newspaper-rule-thick my-6" />
+
+        {/* Obituaries */}
+        <ObituariesSection obituaries={obituaries} />
 
         {/* Footer */}
         <Footer />
