@@ -12,10 +12,8 @@ import VintageAds from "@/components/newspaper/VintageAds";
 import ObituariesSection from "@/components/newspaper/ObituariesSection";
 import LetterSubmissionForm from "@/components/newspaper/LetterSubmissionForm";
 import Footer from "@/components/newspaper/Footer";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { getLatestEdition, generateNewEdition, NewspaperContent } from "@/lib/newspaper";
+import { Loader2 } from "lucide-react";
+import { getLatestEdition, NewspaperContent } from "@/lib/newspaper";
 
 // Default content when no edition exists
 const defaultContent: NewspaperContent = {
@@ -97,7 +95,6 @@ const defaultContent: NewspaperContent = {
 const Index = () => {
   const [content, setContent] = useState<NewspaperContent>(defaultContent);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,57 +111,14 @@ const Index = () => {
     setIsLoading(false);
   };
 
-  const handleGenerateNew = async () => {
-    setIsGenerating(true);
-    toast({
-      title: "🗞️ Printing new edition...",
-      description: "Our unhinged AI reporters are crafting satirical stories and generating editorial cartoons. This takes about 30-60 seconds.",
-      duration: 60000,
-    });
-
-    const success = await generateNewEdition();
-    
-    if (success) {
-      await loadEdition();
-      toast({
-        title: "📰 EXTRA! EXTRA!",
-        description: "A fresh edition of absolute chaos is hot off the press!",
-      });
-    } else {
-      toast({
-        title: "Press malfunction!",
-        description: "The printing press caught fire (metaphorically). Please try again.",
-        variant: "destructive",
-      });
-    }
-    
-    setIsGenerating(false);
-  };
-
-  if (isLoading || isGenerating) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-paper paper-texture flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <Loader2 className="w-16 h-16 animate-spin mx-auto text-ink" />
           <h2 className="font-masthead text-3xl mt-6 text-headline">
-            {isGenerating ? "Printing Fresh Edition..." : "Loading Today's Tribune..."}
+            Loading Today's Tribune...
           </h2>
-          {isGenerating && (
-            <div className="mt-4 space-y-2">
-              <p className="font-body text-lg text-ink-light">
-                Our AI reporters are working frantically:
-              </p>
-              <ul className="font-body text-sm text-ink-light italic space-y-1">
-                <li>✍️ Crafting unhinged headlines...</li>
-                <li>🎨 Drawing editorial cartoons...</li>
-                <li>💀 Writing satirical obituaries...</li>
-                <li>🐍 Formulating snake oil ads...</li>
-              </ul>
-              <p className="font-body text-xs text-ink-light mt-4">
-                This typically takes 30-60 seconds
-              </p>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -173,22 +127,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-paper paper-texture">
       <div className="container max-w-6xl mx-auto px-4 py-6">
-        {/* Generate button */}
-        <div className="flex justify-end mb-4">
-          <Button
-            onClick={handleGenerateNew}
-            disabled={isGenerating}
-            variant="outline"
-            className="font-headline text-sm border-ink text-ink hover:bg-sepia"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Generate New Edition
-          </Button>
-        </div>
 
         {lastGenerated && (
           <p className="text-right text-xs text-ink-light font-body mb-2">

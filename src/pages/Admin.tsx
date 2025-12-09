@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Lock, Check, X, Star, Trash2, ArrowLeft, Loader2 } from "lucide-react";
+import { Lock, Check, X, Star, Trash2, ArrowLeft, Loader2, RefreshCw, Newspaper } from "lucide-react";
 import { Link } from "react-router-dom";
+import { generateNewEdition } from "@/lib/newspaper";
 
 interface LetterSubmission {
   id: string;
@@ -25,6 +26,7 @@ const Admin = () => {
   const [pinError, setPinError] = useState(false);
   const [letters, setLetters] = useState<LetterSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +109,32 @@ const Admin = () => {
     }
   };
 
+  const handleGenerateNew = async () => {
+    setIsGenerating(true);
+    toast({
+      title: "🗞️ Printing new edition...",
+      description: "Our unhinged AI reporters are crafting satirical stories and generating editorial cartoons. This takes about 30-60 seconds.",
+      duration: 60000,
+    });
+
+    const success = await generateNewEdition();
+    
+    if (success) {
+      toast({
+        title: "📰 EXTRA! EXTRA!",
+        description: "A fresh edition of absolute chaos is hot off the press!",
+      });
+    } else {
+      toast({
+        title: "Press malfunction!",
+        description: "The printing press caught fire (metaphorically). Please try again.",
+        variant: "destructive",
+      });
+    }
+    
+    setIsGenerating(false);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-paper paper-texture flex items-center justify-center">
@@ -158,6 +186,33 @@ const Admin = () => {
     );
   }
 
+  if (isGenerating) {
+    return (
+      <div className="min-h-screen bg-paper paper-texture flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto text-ink" />
+          <h2 className="font-masthead text-3xl mt-6 text-headline">
+            Printing Fresh Edition...
+          </h2>
+          <div className="mt-4 space-y-2">
+            <p className="font-body text-lg text-ink-light">
+              Our AI reporters are working frantically:
+            </p>
+            <ul className="font-body text-sm text-ink-light italic space-y-1">
+              <li>✍️ Crafting unhinged headlines...</li>
+              <li>🎨 Drawing editorial cartoons...</li>
+              <li>💀 Writing satirical obituaries...</li>
+              <li>🐍 Formulating snake oil ads...</li>
+            </ul>
+            <p className="font-body text-xs text-ink-light mt-4">
+              This typically takes 30-60 seconds
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-paper paper-texture">
       <div className="container max-w-4xl mx-auto px-4 py-6">
@@ -165,10 +220,10 @@ const Admin = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-masthead text-3xl text-headline">
-              📬 Letters to the Editor
+              🗞️ Editor's Office
             </h1>
             <p className="font-body text-ink-light">
-              Review, approve, and feature reader submissions
+              Manage the Tribune
             </p>
           </div>
           <Link to="/">
@@ -179,7 +234,35 @@ const Admin = () => {
           </Link>
         </div>
 
+        {/* Generate New Edition Section */}
+        <div className="border-4 border-double border-ink p-6 mb-6 bg-sepia/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-headline text-xl font-bold text-headline flex items-center gap-2">
+                <Newspaper className="w-5 h-5" />
+                Generate New Edition
+              </h2>
+              <p className="font-body text-sm text-ink-light mt-1">
+                Create a fresh batch of satirical news, comics, and chaos
+              </p>
+            </div>
+            <Button
+              onClick={handleGenerateNew}
+              disabled={isGenerating}
+              className="font-headline uppercase tracking-wide bg-ink text-primary-foreground hover:bg-ink/90"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Generate Now
+            </Button>
+          </div>
+        </div>
+
         <div className="newspaper-rule-thick mb-6" />
+
+        {/* Letters Section */}
+        <h2 className="font-headline text-xl font-bold text-headline mb-4">
+          📬 Reader Letters
+        </h2>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
