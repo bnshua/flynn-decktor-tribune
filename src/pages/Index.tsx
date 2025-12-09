@@ -10,6 +10,7 @@ import ClassifiedsBox from "@/components/newspaper/ClassifiedsBox";
 import ComicsSection from "@/components/newspaper/ComicsSection";
 import VintageAds from "@/components/newspaper/VintageAds";
 import ObituariesSection from "@/components/newspaper/ObituariesSection";
+import LetterSubmissionForm from "@/components/newspaper/LetterSubmissionForm";
 import Footer from "@/components/newspaper/Footer";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2 } from "lucide-react";
@@ -329,6 +330,11 @@ const Index = () => {
         <div className="newspaper-rule-thick my-6" />
 
         <ObituariesSection obituaries={content.obituaries} />
+
+        <div className="newspaper-rule-thick my-6" />
+
+        {/* Letter Submission Form */}
+        <LetterSubmissionForm />
 
         <Footer />
       </div>
