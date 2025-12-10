@@ -243,6 +243,7 @@ serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!` }
         ],
+        max_tokens: 8000,
       }),
     });
 
@@ -289,20 +290,7 @@ serve(async (req) => {
       }
       jsonText = jsonText.trim();
       
-      // Sanitize control characters inside strings that break JSON parsing
-      // Replace literal newlines, tabs, and other control chars inside string values
-      jsonText = jsonText
-        .replace(/[\x00-\x1F\x7F]/g, (char: string) => {
-          // Keep actual structural newlines between JSON elements
-          if (char === '\n' || char === '\r' || char === '\t') {
-            return char;
-          }
-          // Remove other control characters
-          return '';
-        });
-      
       // Try to fix common issues: unescaped newlines inside strings
-      // This regex finds strings and escapes newlines within them
       let inString = false;
       let escaped = false;
       let result = '';
@@ -329,7 +317,6 @@ serve(async (req) => {
         }
         
         if (inString && (char === '\n' || char === '\r')) {
-          // Escape newlines inside strings
           result += char === '\n' ? '\\n' : '\\r';
           continue;
         }
@@ -342,10 +329,30 @@ serve(async (req) => {
         result += char;
       }
       
+      // If JSON appears truncated (doesn't end with }), try to repair it
+      if (!result.trim().endsWith('}')) {
+        console.log('JSON appears truncated, attempting repair...');
+        // Find last complete object/array and close remaining brackets
+        let bracketCount = 0;
+        let braceCount = 0;
+        for (const c of result) {
+          if (c === '{') braceCount++;
+          if (c === '}') braceCount--;
+          if (c === '[') bracketCount++;
+          if (c === ']') bracketCount--;
+        }
+        // Close any unclosed strings first
+        if (inString) result += '"';
+        // Close brackets/braces
+        while (bracketCount > 0) { result += ']'; bracketCount--; }
+        while (braceCount > 0) { result += '}'; braceCount--; }
+      }
+      
       content = JSON.parse(result);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
       console.error('First 500 chars of response:', generatedText.substring(0, 500));
+      console.error('Last 500 chars of response:', generatedText.substring(generatedText.length - 500));
       throw new Error('Failed to parse AI-generated content as JSON');
     }
 
