@@ -12,8 +12,17 @@ import VintageAds from "@/components/newspaper/VintageAds";
 import ObituariesSection from "@/components/newspaper/ObituariesSection";
 import LetterSubmissionForm from "@/components/newspaper/LetterSubmissionForm";
 import Footer from "@/components/newspaper/Footer";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import { getLatestEdition, NewspaperContent } from "@/lib/newspaper";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ReaderLetter {
+  id: string;
+  author_name: string;
+  author_location: string | null;
+  letter_content: string;
+  is_featured: boolean;
+}
 
 // Default content when no edition exists
 const defaultContent: NewspaperContent = {
@@ -96,9 +105,11 @@ const Index = () => {
   const [content, setContent] = useState<NewspaperContent>(defaultContent);
   const [isLoading, setIsLoading] = useState(true);
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
+  const [readerLetters, setReaderLetters] = useState<ReaderLetter[]>([]);
 
   useEffect(() => {
     loadEdition();
+    loadApprovedLetters();
   }, []);
 
   const loadEdition = async () => {
@@ -109,6 +120,20 @@ const Index = () => {
       setLastGenerated(edition.generatedAt);
     }
     setIsLoading(false);
+  };
+
+  const loadApprovedLetters = async () => {
+    const { data } = await supabase
+      .from("letter_submissions")
+      .select("id, author_name, author_location, letter_content, is_featured")
+      .eq("is_approved", true)
+      .order("is_featured", { ascending: false })
+      .order("submitted_at", { ascending: false })
+      .limit(5);
+    
+    if (data) {
+      setReaderLetters(data);
+    }
   };
 
   if (isLoading) {
@@ -221,6 +246,31 @@ const Index = () => {
                   {i < content.opinion.length - 1 && <div className="newspaper-rule my-3" />}
                 </div>
               ))}
+              
+              {readerLetters.length > 0 && (
+                <>
+                  <div className="newspaper-rule-thick my-4" />
+                  <h4 className="font-headline text-lg font-bold text-headline mb-3 flex items-center gap-2">
+                    Letters From Our Readers
+                  </h4>
+                  {readerLetters.map((letter, i) => (
+                    <div key={letter.id} className="mb-3">
+                      <div className="flex items-start gap-2">
+                        {letter.is_featured && (
+                          <Star className="w-4 h-4 text-accent fill-accent flex-shrink-0 mt-1" />
+                        )}
+                        <div>
+                          <p className="font-body text-sm text-ink italic">"{letter.letter_content}"</p>
+                          <p className="font-body text-xs text-ink-light mt-1">
+                            — {letter.author_name}{letter.author_location ? `, ${letter.author_location}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      {i < readerLetters.length - 1 && <div className="newspaper-rule my-2" />}
+                    </div>
+                  ))}
+                </>
+              )}
             </Section>
           </div>
         </div>
