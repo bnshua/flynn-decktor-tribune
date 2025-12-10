@@ -1,11 +1,20 @@
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 const Masthead = () => {
   const today = new Date();
   const formattedDate = format(today, "EEEE, MMMM do, yyyy");
 
   return (
-    <header className="text-center py-6 border-b-4 border-double border-ink">
+    <header className="text-center py-6 border-b-4 border-double border-ink relative">
+      {/* GAMES Button - Top Right */}
+      <Link 
+        to="/games"
+        className="absolute top-4 right-4 px-4 py-2 bg-headline text-paper font-headline font-bold text-sm tracking-wider hover:bg-ink transition-colors border-2 border-headline hover:border-ink"
+      >
+        GAMES
+      </Link>
+
       {/* Top bar */}
       <div className="flex justify-between items-center text-sm text-ink-light mb-4 px-4">
         <span className="font-body italic">Est. 1983</span>
