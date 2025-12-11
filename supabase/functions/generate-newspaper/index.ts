@@ -375,6 +375,25 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Archive old comics before creating new edition
+    const { data: oldEdition } = await supabase
+      .from('newspaper_editions')
+      .select('id, content, publish_date')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (oldEdition?.content?.comics) {
+      const comicsToArchive = oldEdition.content.comics.map((comic: any) => ({
+        edition_id: oldEdition.id,
+        title: comic.title,
+        caption: comic.caption,
+        image_url: comic.imageUrl,
+        publish_date: oldEdition.publish_date,
+      }));
+      await supabase.from('comic_archive').insert(comicsToArchive);
+      console.log('Archived comics from previous edition');
+    }
+
     await supabase
       .from('newspaper_editions')
       .update({ is_active: false })
@@ -400,6 +419,17 @@ serve(async (req) => {
 
     console.log('Edition saved successfully:', data.id);
 
+    // Generate game puzzles
+    const puzzles = generatePuzzles();
+    for (const puzzle of puzzles) {
+      await supabase.from('game_puzzles').insert({
+        edition_id: data.id,
+        game_type: puzzle.type,
+        puzzle_data: puzzle.data,
+      });
+    }
+    console.log('Game puzzles generated');
+
     return new Response(JSON.stringify({ 
       success: true, 
       edition_id: data.id,
@@ -418,3 +448,58 @@ serve(async (req) => {
     });
   }
 });
+
+function generatePuzzles() {
+  const WORDS_5 = ["APPLE","BEACH","CHAIR","DANCE","EAGLE","FLAME","GRAPE","HOUSE","IDEAL","JOKER","KNIFE","LEMON","MAPLE","NOBLE","OLIVE","PIANO","QUEEN","RIVER","STONE","TRAIN","UNCLE","VIVID","WHALE","XEROX","YOUNG","ZEBRA","BRAIN","CLOCK","DREAM","EARTH","FIELD","GHOST","HEART","IMAGE","JUDGE","LIGHT","MONEY","NIGHT","OCEAN","PEACE","QUIET","RADIO","SPACE","TABLE","UNITY","VIDEO","WATER","YOUTH","WORLD","ALERT"];
+  
+  const wordleWord = WORDS_5[Math.floor(Math.random() * WORDS_5.length)];
+
+  const connectionCategories = [
+    { name: "FRUITS", words: ["APPLE", "GRAPE", "LEMON", "OLIVE"], difficulty: 0 },
+    { name: "FURNITURE", words: ["CHAIR", "TABLE", "COUCH", "SHELF"], difficulty: 1 },
+    { name: "WEATHER", words: ["STORM", "CLOUD", "SUNNY", "WINDY"], difficulty: 2 },
+    { name: "MUSIC", words: ["PIANO", "GUITAR", "DRUMS", "VIOLIN"], difficulty: 3 },
+  ];
+
+  const miniGrid = [
+    ["C","A","T","S","."],
+    ["H","E","R","O","S"],
+    ["A","L","E","R","T"],
+    ["I","D","E","A","L"],
+    ["R",".","N","T","S"],
+  ];
+
+  const spellingBeeLetters = ["P","L","A","N","E","T","S"];
+  
+  return [
+    { type: "wordle", data: { word: wordleWord } },
+    { type: "connections", data: { categories: connectionCategories } },
+    { type: "mini", data: { 
+      grid: miniGrid,
+      clues: {
+        across: [
+          { number: 1, clue: "Felines", answer: "CATS", row: 0, col: 0 },
+          { number: 5, clue: "Brave person", answer: "HEROS", row: 1, col: 0 },
+          { number: 6, clue: "Warning", answer: "ALERT", row: 2, col: 0 },
+          { number: 7, clue: "Perfect", answer: "IDEAL", row: 3, col: 0 },
+        ],
+        down: [
+          { number: 1, clue: "Seat", answer: "CHAIR", row: 0, col: 0 },
+          { number: 2, clue: "Beer type", answer: "ALE", row: 0, col: 2 },
+          { number: 3, clue: "Lease", answer: "RENT", row: 2, col: 2 },
+          { number: 4, clue: "Plural suffix", answer: "STS", row: 1, col: 4 },
+        ]
+      }
+    }},
+    { type: "crossword", data: { 
+      grid: Array(15).fill(null).map(() => Array(15).fill(".")),
+      clues: { across: [], down: [] }
+    }},
+    { type: "spelling_bee", data: {
+      centerLetter: "A",
+      outerLetters: ["P","L","N","E","T","S"],
+      validWords: ["PLANET","PLANTS","PLANES","SLANT","PLANT","PLANE","PLATE","SLATE","STEAL","TALES","STALE","LEAN","LANE","LATE","PAST","PANT","SALT","SEAL","SEAT","LAST"],
+      pangrams: ["PLANETS","PLANTS"]
+    }}
+  ];
+}

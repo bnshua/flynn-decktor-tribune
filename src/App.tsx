@@ -7,6 +7,11 @@ import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Games from "./pages/Games";
 import Wordle from "./pages/Wordle";
+import Connections from "./pages/Connections";
+import MiniCrossword from "./pages/MiniCrossword";
+import Crossword from "./pages/Crossword";
+import SpellingBee from "./pages/SpellingBee";
+import ComicArchive from "./pages/ComicArchive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,7 +27,11 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/games" element={<Games />} />
           <Route path="/games/wordle" element={<Wordle />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/games/connections" element={<Connections />} />
+          <Route path="/games/mini-crossword" element={<MiniCrossword />} />
+          <Route path="/games/crossword" element={<Crossword />} />
+          <Route path="/games/spelling-bee" element={<SpellingBee />} />
+          <Route path="/comic-archive" element={<ComicArchive />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
