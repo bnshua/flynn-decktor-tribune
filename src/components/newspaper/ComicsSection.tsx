@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 interface ComicSlot {
   title: string;
   caption?: string;
@@ -60,6 +62,16 @@ const ComicsSection = ({ comics }: ComicsSectionProps) => {
             </div>
           );
         })}
+      </div>
+
+      {/* Comic Archive Button */}
+      <div className="mt-4 text-center border-t border-rule pt-4">
+        <Link
+          to="/comic-archive"
+          className="inline-flex items-center gap-2 px-4 py-2 border-2 border-headline rounded font-headline text-sm hover:bg-headline hover:text-paper transition-colors"
+        >
+          📜 Comic Archive
+        </Link>
       </div>
     </div>
   );

@@ -4,9 +4,10 @@ import { ArrowLeft } from "lucide-react";
 const Games = () => {
   const games = [
     { id: "wordle", name: "FDT Wordle", description: "Guess the 5-letter word in 6 tries", available: true },
-    { id: "connections", name: "FDT Connections", description: "Group 16 words into 4 categories", available: false },
-    { id: "mini-crossword", name: "FDT Mini", description: "A quick 5x5 crossword", available: false },
-    { id: "crossword", name: "FDT Crossword", description: "The classic crossword puzzle", available: false },
+    { id: "connections", name: "FDT Connections", description: "Group 16 words into 4 categories", available: true },
+    { id: "mini-crossword", name: "FDT Mini", description: "A quick 5x5 crossword", available: true },
+    { id: "crossword", name: "FDT Crossword", description: "The classic crossword puzzle", available: true },
+    { id: "spelling-bee", name: "FDT Spelling Bee", description: "Make words using 7 letters", available: true },
   ];
 
   return (

@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      comic_archive: {
+        Row: {
+          archived_at: string | null
+          caption: string | null
+          edition_id: string | null
+          id: string
+          image_url: string | null
+          publish_date: string
+          title: string
+        }
+        Insert: {
+          archived_at?: string | null
+          caption?: string | null
+          edition_id?: string | null
+          id?: string
+          image_url?: string | null
+          publish_date: string
+          title: string
+        }
+        Update: {
+          archived_at?: string | null
+          caption?: string | null
+          edition_id?: string | null
+          id?: string
+          image_url?: string | null
+          publish_date?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comic_archive_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "newspaper_editions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_puzzles: {
+        Row: {
+          created_at: string | null
+          edition_id: string | null
+          game_type: string
+          id: string
+          puzzle_data: Json
+        }
+        Insert: {
+          created_at?: string | null
+          edition_id?: string | null
+          game_type: string
+          id?: string
+          puzzle_data: Json
+        }
+        Update: {
+          created_at?: string | null
+          edition_id?: string | null
+          game_type?: string
+          id?: string
+          puzzle_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_puzzles_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "newspaper_editions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       letter_submissions: {
         Row: {
           author_location: string | null
