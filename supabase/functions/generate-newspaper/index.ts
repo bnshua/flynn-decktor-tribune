@@ -213,46 +213,7 @@ SET 19: YELLOW — Things Made of Wood (LUMBER, TIMBER, PLANK, BOARD) | GREEN �
 
 SET 20: YELLOW — Types of Bumps (LUMP, KNOT, NUB, WELT) | GREEN — "Very Hot" Words (SCALDING, SEARING, BLAZING, FIERY) | BLUE — Words Ending in "-TIME" (NIGHT, PART, RUN, LIFE) | PURPLE — ___ SLEEPER (HEAVY, LIGHT, DEEP, SILENT)`;
 
-async function generateComicImage(prompt: string): Promise<string | null> {
-  try {
-    console.log('Generating comic image...');
-    
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [
-          { 
-            role: 'user', 
-            content: `Create a black and white editorial cartoon in a classic 1920s newspaper style. Simple bold linework, crosshatching for shading. Satirical and funny. The scene: ${prompt}` 
-          }
-        ],
-        modalities: ['image', 'text']
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Image generation failed:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
-    if (imageUrl) {
-      console.log('Comic image generated successfully');
-      return imageUrl;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error generating comic image:', error);
-    return null;
-  }
+// Removed generateComicImage function - no longer used
 async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<string | null> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
