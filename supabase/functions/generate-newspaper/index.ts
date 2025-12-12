@@ -3,14 +3,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const systemPrompt = `You are the UNHINGED AI editor for the Flynn-Decktor Tribune, the most absurdist satirical newspaper ever printed. Your humor should be BITING, ABSURD, and HILARIOUS - like The Onion on steroids mixed with Monty Python.
 
@@ -217,82 +216,71 @@ SET 20: YELLOW — Types of Bumps (LUMP, KNOT, NUB, WELT) | GREEN — "Very Hot"
 
 async function generateComicImage(prompt: string): Promise<string | null> {
   try {
-    console.log('Generating comic image...');
-    
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    console.log("Generating comic image with OpenAI...");
+
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [
-          { 
-            role: 'user', 
-            content: `Create a black and white editorial cartoon in a classic 1920s newspaper style. Simple bold linework, crosshatching for shading. Satirical and funny. The scene: ${prompt}` 
-          }
-        ],
-        modalities: ['image', 'text']
+        model: "gpt-image-1",
+        prompt: `Black and white editorial cartoon, 1920s newspaper style, crosshatching, bold linework. Scene: ${prompt}`,
+        size: "1024x1024",
       }),
     });
 
     if (!response.ok) {
-      console.error('Image generation failed:', response.status);
+      console.error("OpenAI image error:", response.status);
+      console.error(await response.text());
       return null;
     }
 
     const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
-    if (imageUrl) {
-      console.log('Comic image generated successfully');
-      return imageUrl;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error generating comic image:', error);
+    return data.data?.[0]?.url ?? null;
+  } catch (err) {
+    console.error("Error generating comic image:", err);
     return null;
   }
 }
 
 async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<string | null> {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: "gpt-4o",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
         max_tokens: maxTokens,
-        temperature: 0.9
+        temperature: 0.9,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI error:', response.status, errorText);
+      console.error("OpenAI error:", response.status, errorText);
       return null;
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || null;
   } catch (error) {
-    console.error('OpenAI call failed:', error);
+    console.error("OpenAI call failed:", error);
     return null;
   }
 }
 
 async function generateConnectionsPuzzle(): Promise<any> {
-  console.log('Generating Connections puzzle with AI...');
-  
+  console.log("Generating Connections puzzle with AI...");
+
   const prompt = `${CONNECTIONS_EXAMPLES}
 
 Generate a brand new, unique NYT-style Connections puzzle that is DIFFERENT from all examples above.
@@ -319,16 +307,19 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   const result = await callOpenAI(
-    'You are an expert puzzle creator for the New York Times. Create clever, fair word puzzles.',
-    prompt
+    "You are an expert puzzle creator for the New York Times. Create clever, fair word puzzles.",
+    prompt,
   );
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       return JSON.parse(cleaned);
     } catch (e) {
-      console.error('Failed to parse Connections JSON:', e);
+      console.error("Failed to parse Connections JSON:", e);
     }
   }
 
@@ -338,13 +329,13 @@ Return ONLY valid JSON in this exact format:
       { name: "CARD GAMES", words: ["POKER", "BRIDGE", "RUMMY", "HEARTS"], difficulty: 0 },
       { name: "TYPES OF DANCES", words: ["SALSA", "TANGO", "WALTZ", "SWING"], difficulty: 1 },
       { name: "THINGS THAT ARE GOLDEN", words: ["GATE", "RULE", "TICKET", "RATIO"], difficulty: 2 },
-      { name: "___ BAND", words: ["RUBBER", "ROCK", "WEDDING", "GARAGE"], difficulty: 3 }
-    ]
+      { name: "___ BAND", words: ["RUBBER", "ROCK", "WEDDING", "GARAGE"], difficulty: 3 },
+    ],
   };
 }
 
 async function generateMiniCrossword(): Promise<any> {
-  console.log('Generating Mini Crossword with AI...');
+  console.log("Generating Mini Crossword with AI...");
 
   const prompt = `Generate a 5x5 mini crossword puzzle like the NYT Mini.
 
@@ -380,53 +371,56 @@ Return ONLY valid JSON in this exact format:
 Generate a completely different puzzle with proper symmetry and interlocking words. Number clues starting from 1, going left-to-right, top-to-bottom for each word start position.`;
 
   const result = await callOpenAI(
-    'You are an expert crossword puzzle constructor for the New York Times.',
+    "You are an expert crossword puzzle constructor for the New York Times.",
     prompt,
-    2000
+    2000,
   );
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       const parsed = JSON.parse(cleaned);
       // Validate grid is 5x5
       if (parsed.grid && parsed.grid.length === 5 && parsed.grid[0].length === 5) {
         return parsed;
       }
     } catch (e) {
-      console.error('Failed to parse Mini Crossword JSON:', e);
+      console.error("Failed to parse Mini Crossword JSON:", e);
     }
   }
 
   // Fallback puzzle
   return {
     grid: [
-      ["S","T","A","R","T"],
-      ["H","E","R","O","S"],
-      ["O","V","E","R","T"],
-      ["R","E","N","E","W"],
-      ["T","S",".",".","."]
+      ["S", "T", "A", "R", "T"],
+      ["H", "E", "R", "O", "S"],
+      ["O", "V", "E", "R", "T"],
+      ["R", "E", "N", "E", "W"],
+      ["T", "S", ".", ".", "."],
     ],
     clues: {
       across: [
         { number: 1, clue: "Begin", answer: "START", row: 0, col: 0 },
         { number: 6, clue: "Brave ones", answer: "HEROS", row: 1, col: 0 },
         { number: 7, clue: "Not hidden", answer: "OVERT", row: 2, col: 0 },
-        { number: 8, clue: "Extend a subscription", answer: "RENEW", row: 3, col: 0 }
+        { number: 8, clue: "Extend a subscription", answer: "RENEW", row: 3, col: 0 },
       ],
       down: [
         { number: 1, clue: "Brief", answer: "SHORT", row: 0, col: 0 },
         { number: 2, clue: "At any point", answer: "EVER", row: 0, col: 1 },
         { number: 3, clue: "Amphitheater", answer: "ARENA", row: 0, col: 2 },
         { number: 4, clue: "Paddle", answer: "ROW", row: 0, col: 3 },
-        { number: 5, clue: "Commotion", answer: "STEW", row: 0, col: 4 }
-      ]
-    }
+        { number: 5, clue: "Commotion", answer: "STEW", row: 0, col: 4 },
+      ],
+    },
   };
 }
 
 async function generateCrossword(): Promise<any> {
-  console.log('Generating Full Crossword with AI...');
+  console.log("Generating Full Crossword with AI...");
 
   const prompt = `Generate a 15x15 crossword puzzle grid and clues in NYT style.
 
@@ -449,50 +443,49 @@ Return ONLY valid JSON with:
 
 Create a solvable puzzle with clever clues.`;
 
-  const result = await callOpenAI(
-    'You are an expert crossword constructor for the New York Times.',
-    prompt,
-    8000
-  );
+  const result = await callOpenAI("You are an expert crossword constructor for the New York Times.", prompt, 8000);
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       const parsed = JSON.parse(cleaned);
       if (parsed.grid && parsed.grid.length === 15) {
         return parsed;
       }
     } catch (e) {
-      console.error('Failed to parse Crossword JSON:', e);
+      console.error("Failed to parse Crossword JSON:", e);
     }
   }
 
   // Generate a simple valid 15x15 grid as fallback
-  const fallbackGrid = Array(15).fill(null).map((_, r) => {
-    return Array(15).fill(null).map((_, c) => {
-      // Create a simple pattern with some black squares
-      if ((r === 4 || r === 10) && (c === 4 || c === 10)) return '.';
-      if ((r === 7) && (c === 0 || c === 14)) return '.';
-      if ((r === 0 || r === 14) && (c === 7)) return '.';
-      return 'A'; // Placeholder
+  const fallbackGrid = Array(15)
+    .fill(null)
+    .map((_, r) => {
+      return Array(15)
+        .fill(null)
+        .map((_, c) => {
+          // Create a simple pattern with some black squares
+          if ((r === 4 || r === 10) && (c === 4 || c === 10)) return ".";
+          if (r === 7 && (c === 0 || c === 14)) return ".";
+          if ((r === 0 || r === 14) && c === 7) return ".";
+          return "A"; // Placeholder
+        });
     });
-  });
 
   return {
     grid: fallbackGrid,
     clues: {
-      across: [
-        { number: 1, clue: "First word", answer: "AAAA", row: 0, col: 0 }
-      ],
-      down: [
-        { number: 1, clue: "First down", answer: "AAAA", row: 0, col: 0 }
-      ]
-    }
+      across: [{ number: 1, clue: "First word", answer: "AAAA", row: 0, col: 0 }],
+      down: [{ number: 1, clue: "First down", answer: "AAAA", row: 0, col: 0 }],
+    },
   };
 }
 
 async function generateSpellingBee(): Promise<any> {
-  console.log('Generating Spelling Bee with AI...');
+  console.log("Generating Spelling Bee with AI...");
 
   const prompt = `Generate an NYT-style Spelling Bee puzzle.
 
@@ -518,14 +511,17 @@ Return ONLY valid JSON:
 Common good letter sets include vowel-heavy combinations like AEILNRT, AEINRST, AELNOST.`;
 
   const result = await callOpenAI(
-    'You are an expert Spelling Bee puzzle creator. Only include real English dictionary words.',
+    "You are an expert Spelling Bee puzzle creator. Only include real English dictionary words.",
     prompt,
-    3000
+    3000,
   );
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       const parsed = JSON.parse(cleaned);
       if (parsed.centerLetter && parsed.outerLetters && parsed.validWords) {
         // Validate words use only the available letters
@@ -539,41 +535,68 @@ Common good letter sets include vowel-heavy combinations like AEILNRT, AEINRST, 
           }
           return true;
         });
-        
-        const validatedPangrams = parsed.pangrams?.filter((word: string) => {
-          const upper = word.toUpperCase();
-          const wordLetters = new Set(upper.split(''));
-          return allLetters.every((l: string) => wordLetters.has(l));
-        }) || [];
+
+        const validatedPangrams =
+          parsed.pangrams?.filter((word: string) => {
+            const upper = word.toUpperCase();
+            const wordLetters = new Set(upper.split(""));
+            return allLetters.every((l: string) => wordLetters.has(l));
+          }) || [];
 
         return {
           centerLetter: parsed.centerLetter.toUpperCase(),
           outerLetters: parsed.outerLetters.map((l: string) => l.toUpperCase()),
           validWords: validatedWords.map((w: string) => w.toUpperCase()),
-          pangrams: validatedPangrams.map((w: string) => w.toUpperCase())
+          pangrams: validatedPangrams.map((w: string) => w.toUpperCase()),
         };
       }
     } catch (e) {
-      console.error('Failed to parse Spelling Bee JSON:', e);
+      console.error("Failed to parse Spelling Bee JSON:", e);
     }
   }
 
   // Fallback puzzle with verified words
   return {
     centerLetter: "L",
-    outerLetters: ["A","E","N","R","T","I"],
+    outerLetters: ["A", "E", "N", "R", "T", "I"],
     validWords: [
-      "LATER", "TRAIL", "TRIAL", "ALERT", "ALTER", "LINER", "LITER", "LITRE",
-      "RENAL", "LEARN", "ALINE", "ALIEN", "LINER", "TILER", "RILE", "TILE",
-      "LITE", "RAIL", "TAIL", "TALL", "TELL", "TILL", "RILL", "TRILL",
-      "ENTAIL", "RETAIL", "RATLINE", "LATRINE", "RELIANT", "LITERAL"
+      "LATER",
+      "TRAIL",
+      "TRIAL",
+      "ALERT",
+      "ALTER",
+      "LINER",
+      "LITER",
+      "LITRE",
+      "RENAL",
+      "LEARN",
+      "ALINE",
+      "ALIEN",
+      "LINER",
+      "TILER",
+      "RILE",
+      "TILE",
+      "LITE",
+      "RAIL",
+      "TAIL",
+      "TALL",
+      "TELL",
+      "TILL",
+      "RILL",
+      "TRILL",
+      "ENTAIL",
+      "RETAIL",
+      "RATLINE",
+      "LATRINE",
+      "RELIANT",
+      "LITERAL",
     ],
-    pangrams: ["LATRINE", "RATLINE", "RELIANT"]
+    pangrams: ["LATRINE", "RATLINE", "RELIANT"],
   };
 }
 
 async function generateWordleWord(): Promise<string> {
-  console.log('Generating Wordle word with AI...');
+  console.log("Generating Wordle word with AI...");
 
   const prompt = `Pick a single 5-letter English word for today's Wordle puzzle.
 
@@ -586,14 +609,13 @@ RULES:
 
 Return ONLY the word in uppercase, nothing else. Just the 5-letter word.`;
 
-  const result = await callOpenAI(
-    'You are a Wordle word selector. Pick fair, common 5-letter words.',
-    prompt,
-    50
-  );
+  const result = await callOpenAI("You are a Wordle word selector. Pick fair, common 5-letter words.", prompt, 50);
 
   if (result) {
-    const word = result.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    const word = result
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z]/g, "");
     if (word.length === 5) {
       return word;
     }
@@ -605,7 +627,7 @@ Return ONLY the word in uppercase, nothing else. Just the 5-letter word.`;
 }
 
 async function generatePuzzles(): Promise<Array<{ type: string; data: any }>> {
-  console.log('Generating all puzzles with AI...');
+  console.log("Generating all puzzles with AI...");
 
   // Generate all puzzles in parallel
   const [connections, mini, crossword, spellingBee, wordleWord] = await Promise.all([
@@ -613,7 +635,7 @@ async function generatePuzzles(): Promise<Array<{ type: string; data: any }>> {
     generateMiniCrossword(),
     generateCrossword(),
     generateSpellingBee(),
-    generateWordleWord()
+    generateWordleWord(),
   ]);
 
   return [
@@ -621,44 +643,47 @@ async function generatePuzzles(): Promise<Array<{ type: string; data: any }>> {
     { type: "connections", data: connections },
     { type: "mini", data: mini },
     { type: "crossword", data: crossword },
-    { type: "spelling_bee", data: spellingBee }
+    { type: "spelling_bee", data: spellingBee },
   ];
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Starting newspaper generation...');
+    console.log("Starting newspaper generation...");
 
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured');
+      throw new Error("OPENAI_API_KEY is not configured");
     }
 
     const now = new Date();
     const estOffset = -5 * 60;
     const estDate = new Date(now.getTime() + (estOffset - now.getTimezoneOffset()) * 60000);
-    const publishDate = estDate.toISOString().split('T')[0];
+    const publishDate = estDate.toISOString().split("T")[0];
 
     console.log(`Generating edition for: ${publishDate}`);
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!` }
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!`,
+          },
         ],
         max_tokens: 8000,
       }),
@@ -666,18 +691,18 @@ serve(async (req) => {
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
-      
+      console.error("AI Gateway error:", aiResponse.status, errorText);
+
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds.' }), {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
           status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
@@ -687,90 +712,96 @@ serve(async (req) => {
     const generatedText = aiData.choices?.[0]?.message?.content;
 
     if (!generatedText) {
-      throw new Error('No content generated from AI');
+      throw new Error("No content generated from AI");
     }
 
-    console.log('AI response received, parsing JSON...');
+    console.log("AI response received, parsing JSON...");
 
     let content;
     try {
       let jsonText = generatedText.trim();
-      
+
       // Remove markdown code blocks
-      if (jsonText.startsWith('```json')) {
+      if (jsonText.startsWith("```json")) {
         jsonText = jsonText.slice(7);
-      } else if (jsonText.startsWith('```')) {
+      } else if (jsonText.startsWith("```")) {
         jsonText = jsonText.slice(3);
       }
-      if (jsonText.endsWith('```')) {
+      if (jsonText.endsWith("```")) {
         jsonText = jsonText.slice(0, -3);
       }
       jsonText = jsonText.trim();
-      
+
       // Try to fix common issues: unescaped newlines inside strings
       let inString = false;
       let escaped = false;
-      let result = '';
-      
+      let result = "";
+
       for (let i = 0; i < jsonText.length; i++) {
         const char = jsonText[i];
-        
+
         if (escaped) {
           result += char;
           escaped = false;
           continue;
         }
-        
-        if (char === '\\') {
+
+        if (char === "\\") {
           escaped = true;
           result += char;
           continue;
         }
-        
+
         if (char === '"') {
           inString = !inString;
           result += char;
           continue;
         }
-        
-        if (inString && (char === '\n' || char === '\r')) {
-          result += char === '\n' ? '\\n' : '\\r';
+
+        if (inString && (char === "\n" || char === "\r")) {
+          result += char === "\n" ? "\\n" : "\\r";
           continue;
         }
-        
-        if (inString && char === '\t') {
-          result += '\\t';
+
+        if (inString && char === "\t") {
+          result += "\\t";
           continue;
         }
-        
+
         result += char;
       }
-      
+
       // If JSON appears truncated (doesn't end with }), try to repair it
-      if (!result.trim().endsWith('}')) {
-        console.log('JSON appears truncated, attempting repair...');
+      if (!result.trim().endsWith("}")) {
+        console.log("JSON appears truncated, attempting repair...");
         let bracketCount = 0;
         let braceCount = 0;
         for (const c of result) {
-          if (c === '{') braceCount++;
-          if (c === '}') braceCount--;
-          if (c === '[') bracketCount++;
-          if (c === ']') bracketCount--;
+          if (c === "{") braceCount++;
+          if (c === "}") braceCount--;
+          if (c === "[") bracketCount++;
+          if (c === "]") bracketCount--;
         }
         if (inString) result += '"';
-        while (bracketCount > 0) { result += ']'; bracketCount--; }
-        while (braceCount > 0) { result += '}'; braceCount--; }
+        while (bracketCount > 0) {
+          result += "]";
+          bracketCount--;
+        }
+        while (braceCount > 0) {
+          result += "}";
+          braceCount--;
+        }
       }
-      
+
       content = JSON.parse(result);
     } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.error('First 500 chars of response:', generatedText.substring(0, 500));
-      console.error('Last 500 chars of response:', generatedText.substring(generatedText.length - 500));
-      throw new Error('Failed to parse AI-generated content as JSON');
+      console.error("JSON parse error:", parseError);
+      console.error("First 500 chars of response:", generatedText.substring(0, 500));
+      console.error("Last 500 chars of response:", generatedText.substring(generatedText.length - 500));
+      throw new Error("Failed to parse AI-generated content as JSON");
     }
 
-    console.log('Content parsed, generating comic images...');
+    console.log("Content parsed, generating comic images...");
 
     if (content.comics && Array.isArray(content.comics)) {
       const comicsWithImages = await Promise.all(
@@ -779,21 +810,21 @@ serve(async (req) => {
           const imageUrl = await generateComicImage(imagePrompt);
           return {
             ...comic,
-            imageUrl: imageUrl
+            imageUrl: imageUrl,
           };
-        })
+        }),
       );
       content.comics = comicsWithImages;
-      console.log('Comic images generated');
+      console.log("Comic images generated");
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // Archive old comics before creating new edition
     const { data: oldEdition } = await supabase
-      .from('newspaper_editions')
-      .select('id, content, publish_date')
-      .eq('is_active', true)
+      .from("newspaper_editions")
+      .select("id, content, publish_date")
+      .eq("is_active", true)
       .maybeSingle();
 
     if (oldEdition?.content?.comics) {
@@ -804,63 +835,68 @@ serve(async (req) => {
         image_url: comic.imageUrl,
         publish_date: oldEdition.publish_date,
       }));
-      await supabase.from('comic_archive').insert(comicsToArchive);
-      console.log('Archived comics from previous edition');
+      await supabase.from("comic_archive").insert(comicsToArchive);
+      console.log("Archived comics from previous edition");
     }
 
-    await supabase
-      .from('newspaper_editions')
-      .update({ is_active: false })
-      .eq('is_active', true);
+    await supabase.from("newspaper_editions").update({ is_active: false }).eq("is_active", true);
 
     const { data, error } = await supabase
-      .from('newspaper_editions')
-      .upsert({
-        publish_date: publishDate,
-        content: content,
-        is_active: true,
-        generated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'publish_date'
-      })
+      .from("newspaper_editions")
+      .upsert(
+        {
+          publish_date: publishDate,
+          content: content,
+          is_active: true,
+          generated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "publish_date",
+        },
+      )
       .select()
       .single();
 
     if (error) {
-      console.error('Database error:', error);
+      console.error("Database error:", error);
       throw new Error(`Database error: ${error.message}`);
     }
 
-    console.log('Edition saved successfully:', data.id);
+    console.log("Edition saved successfully:", data.id);
 
     // Generate AI-powered game puzzles
-    console.log('Generating AI-powered puzzles...');
+    console.log("Generating AI-powered puzzles...");
     const puzzles = await generatePuzzles();
-    
+
     for (const puzzle of puzzles) {
-      await supabase.from('game_puzzles').insert({
+      await supabase.from("game_puzzles").insert({
         edition_id: data.id,
         game_type: puzzle.type,
         puzzle_data: puzzle.data,
       });
     }
-    console.log('Game puzzles generated and saved');
+    console.log("Game puzzles generated and saved");
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      edition_id: data.id,
-      publish_date: publishDate 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        edition_id: data.id,
+        publish_date: publishDate,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
-    console.error('Error generating newspaper:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Error generating newspaper:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
