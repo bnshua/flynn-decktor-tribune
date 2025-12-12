@@ -14,26 +14,26 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
+try {
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
 
-    // Get the active edition or the most recent one
-    const { data, error } = await supabase
-      .from('newspaper_editions')
-      .select('*')
-      .order('publish_date', { ascending: false })
-      .limit(1);
+  // Get the active edition or the most recent one
+  const { data, error } = await supabase
+    .from('newspaper_editions')
+    .select('*')
+    .order('publish_date', { ascending: false })
+    .limit(1);
 
-    if (error) {
-      console.error('Database error:', error);
-      return new Response(JSON.stringify({
-        error: 'Database error',
-        hasEdition: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+  if (error) {
+    console.error('Database error:', error);
+    return new Response(JSON.stringify({
+      error: 'Database error',
+      hasEdition: false 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
     if (!data || data.length === 0) {
       console.log('No editions found');
@@ -60,15 +60,25 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  
+  // ...rest of your existing code that uses `data`
+} catch (err: unknown) {
+  console.error(err);
 
-  } catch (error) {
-    console.error('Error fetching edition:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      hasEdition: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  let message = "Unknown error";
+  if (err instanceof Error) {
+    message = err.message;
+  } else if (typeof err === "string") {
+    message = err;
   }
+
+  return new Response(JSON.stringify({
+    error: message,
+    hasEdition: false
+  }), {
+    status: 500,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
 });
