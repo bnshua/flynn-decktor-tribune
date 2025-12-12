@@ -655,10 +655,9 @@ serve(async (req) => {
   try {
     console.log("Starting newspaper generation...");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    // ------------------ REPLACEMENT: Use OpenAI (no Lovable) ------------------
 
+    // Remove any references to LOVABLE_API_KEY. Ensure OPENAI_API_KEY is present:
     if (!OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
     }
@@ -670,46 +669,105 @@ serve(async (req) => {
 
     console.log(`Generating edition for: ${publishDate}`);
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!`,
-          },
-        ],
-        max_tokens: 8000,
-      }),
-    });
+    // Build the user prompt exactly as before
+    const userPrompt = `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!`;
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", aiResponse.status, errorText);
+    // Use your callOpenAI helper to call OpenAI directly
+    const generatedText = await callOpenAI(systemPrompt, userPrompt, 8000);
 
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
+    if (!generatedText) {
+      throw new Error("No content generated from AI (OpenAI returned empty)");
     }
 
-    const aiData = await aiResponse.json();
-    const generatedText = aiData.choices?.[0]?.message?.content;
+    // At this point reuse your existing JSON cleanup + parse logic.
+    // The following block is identical to your original parsing logic; paste it
+    // (or keep the original parsing code exactly as-is) and set `content` from
+    // parsed JSON.
+    let content;
+    try {
+      let jsonText = generatedText.trim();
+
+      // Remove markdown code blocks
+      if (jsonText.startsWith("```json")) {
+        jsonText = jsonText.slice(7);
+      } else if (jsonText.startsWith("```")) {
+        jsonText = jsonText.slice(3);
+      }
+      if (jsonText.endsWith("```")) {
+        jsonText = jsonText.slice(0, -3);
+      }
+      jsonText = jsonText.trim();
+
+      // Try to fix common issues: unescaped newlines inside strings
+      let inString = false;
+      let escaped = false;
+      let result = "";
+
+      for (let i = 0; i < jsonText.length; i++) {
+        const char = jsonText[i];
+
+        if (escaped) {
+          result += char;
+          escaped = false;
+          continue;
+        }
+
+        if (char === "\\") {
+          escaped = true;
+          result += char;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          result += char;
+          continue;
+        }
+
+        if (inString && (char === "\n" || char === "\r")) {
+          result += char === "\n" ? "\\n" : "\\r";
+          continue;
+        }
+
+        if (inString && char === "\t") {
+          result += "\\t";
+          continue;
+        }
+
+        result += char;
+      }
+
+      // If JSON appears truncated (doesn't end with }), try to repair it
+      if (!result.trim().endsWith("}")) {
+        console.log("JSON appears truncated, attempting repair...");
+        let bracketCount = 0;
+        let braceCount = 0;
+        for (const c of result) {
+          if (c === "{") braceCount++;
+          if (c === "}") braceCount--;
+          if (c === "[") bracketCount++;
+          if (c === "]") bracketCount--;
+        }
+        if (inString) result += '"';
+        while (bracketCount > 0) {
+          result += "]";
+          bracketCount--;
+        }
+        while (braceCount > 0) {
+          result += "}";
+          braceCount--;
+        }
+      }
+
+      content = JSON.parse(result);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("First 500 chars of response:", generatedText.substring(0, 500));
+      console.error("Last 500 chars of response:", generatedText.substring(generatedText.length - 500));
+      throw new Error("Failed to parse AI-generated content as JSON");
+    }
+
+    // ------------------------------------------------------------------------
 
     if (!generatedText) {
       throw new Error("No content generated from AI");
