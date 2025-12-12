@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -7,6 +8,7 @@ const corsHeaders = {
 };
 
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -170,6 +172,49 @@ IMPORTANT:
 - Reference AI, social media, crypto, hustle culture, political chaos
 - Make every single item genuinely hilarious!`;
 
+// Connection examples for few-shot prompting
+const CONNECTIONS_EXAMPLES = `Here are example NYT-style Connections puzzles. Create a NEW unique puzzle following this exact format:
+
+SET 1: YELLOW — Things That Creep Slowly (SNAIL, SLUG, LEECH, LARVA) | GREEN — Words Meaning "To Twist" (WRING, WARP, TWINE, SPIRAL) | BLUE — Metallic-Sounding Words (BRONZE, TINNY, STEELY, COPPER) | PURPLE — ___ CLOUD (MUSHROOM, NIMBUS, THUNDER, CIRRUS)
+
+SET 2: YELLOW — Soft Café Treats (MUFFIN, SCONE, DANISH, CUPCAKE) | GREEN — Moves in Chess (CASTLE, FORK, PIN, GAMBIT) | BLUE — Words Ending in "-WARD" (SKYWARD, HOMEWARD, EASTWARD, TOWARD) | PURPLE — FAMOUS "RED" REFERENCES (REDWALL, REDSKY, REDSHIFT, REDBONE)
+
+SET 3: YELLOW — Thin, Flexible Materials (FILM, FOIL, SHEET, SLIP) | GREEN — Words Meaning "Sudden Shock" (JOLT, START, STUN, JAR) | BLUE — Types of Critters With Claws (CRAB, EAGLE, MOLE, OTTER) | PURPLE — ___ WATCH (WRIST, NIGHT, WEATHER, FALCON)
+
+SET 4: YELLOW — Gentle Sounds (HUM, WHIR, MURMUR, BUZZ) | GREEN — "To Move Without Control" (SKID, CAREEN, LURCH, VEER) | BLUE — They Come in Rings (JUPITER, TREE, SATURN, ONION) | PURPLE — ___ DRAGON (KOMODO, BEARDED, WATER, MUD)
+
+SET 5: YELLOW — Words Meaning "Small Amount" (TRACE, SMIDGE, DAB, SPECK) | GREEN — Actions Done to a Rope (KNOT, BRAID, COIL, PULL) | BLUE — Items Stored in a Barn (HAY, FEED, TACK, OATS) | PURPLE — ___ METAL (HEAVY, SHEET, NOBLE, BLACK)
+
+SET 6: YELLOW — Forms of Bright Light (FLARE, GLOW, BEAM, RADIANCE) | GREEN — Things That Can Be "Trimmed" (SAIL, TREE, SPENDING, BEARD) | BLUE — Words With Double Animals (WOLFISH, CATTY, HORSY, MOOSEY) | PURPLE — ___ BREAKER (ICE, NEWS, WAVE, CIRCUIT)
+
+SET 7: YELLOW — Places to Sit (STOOL, CHAIR, BENCH, LEDGE) | GREEN — "Heat" Synonyms (FIRE, BURN, ROAST, SIZZLE) | BLUE — Words Containing "INK" (LINK, BRINK, THINK, SHRINK) | PURPLE — ___ HARBOR (SAFE, PEARL, INNER, BOSTON)
+
+SET 8: YELLOW — Food You Can Spread (BUTTER, JAM, TAHINI, PATE) | GREEN — Things That Ring (BELL, PHONE, TIMER, ALARM) | BLUE — Words for Large Water Creatures (MANATEE, SEALION, BELUGA, ORCA) | PURPLE — ___ BIRD (BLUE, MOCKING, EARLY, CANARY)
+
+SET 9: YELLOW — Tiny Irregular Shapes (FLECK, CHIP, BIT, NICK) | GREEN — Ways to Travel Upright (WALK, STAND, BALANCE, SCOOT) | BLUE — Words Ending in "-LESS" (STARLESS, AIMLESS, TIRELESS, ENDLESS) | PURPLE — ___ EYE (EVIL, HAWK, PRIVATE, BLACK)
+
+SET 10: YELLOW — Things Made of Clay (POT, TILE, BRICK, MUG) | GREEN — "To Hide" (MASK, SHROUD, COVER, VEIL) | BLUE — Natural Disasters (QUAKE, TORNADO, ERUPTION, CYCLONE) | PURPLE — ___ RIDER (GHOST, MIDNIGHT, EASY, STORM)
+
+SET 11: YELLOW — Short Lived Noises (POP, SNAP, CLICK, CLAP) | GREEN — Winter Accessories (SCARF, MITTEN, EARMUFF, PARKA) | BLUE — Things You AWL (LEATHER, BELT, HOLE, BOOT) | PURPLE — ___ WELL (WISHING, SLEEP, OIL, TREAD)
+
+SET 12: YELLOW — Mild Insults (GOOF, NERD, DORK, WACKO) | GREEN — "To Lower Something" (DROP, SINK, DIP, SUBMERGE) | BLUE — Words Starting With "CROSS-" (WIND, BOW, ING, HAIR) | PURPLE — ___ LANE (FAST, MEMORY, BIKE, PRIVATE)
+
+SET 13: YELLOW — Items Cut Into Wedges (LIME, CHEESE, PIE, MELON) | GREEN — "Slick" Synonyms (SLIPPERY, SLEEK, GREASY, OILY) | BLUE — Words With Hidden Planets (SATURNINE, MERCIFUL, MARSUPIAL, NEPTUNEAN) | PURPLE — ___ LINE (PUNCH, DEAD, BOTTOM, PIPE)
+
+SET 14: YELLOW — Reactions to Pain (YELP, FLINCH, WINCE, HISS) | GREEN — Things You RSVP To (WEDDING, PARTY, DINNER, CEREMONY) | BLUE — Words Ending in "-DROP" (BACK, TEAR, RAIN, GUM) | PURPLE — ___ HORN (FOG, RHINO, UNI, AIR)
+
+SET 15: YELLOW — Circular Items (COIN, RING, TOKEN, CLOCK) | GREEN — Methods of Stealing (LIFT, SWIPE, SNATCH, POCKET) | BLUE — ___ BERRY (ELDER, GOOSE, CLOUD, MUL) | PURPLE — ___ QUEEN (DRAMA, ICE, SNOW, BEAUTY)
+
+SET 16: YELLOW — Things You Brush (HAIR, TEETH, DUST, CRUMBS) | GREEN — Quiet Actions (TIPTOE, HUSH, MUTE, SOFTEN) | BLUE — Words With "STONE" (CUTTER, WEATHER, FLAG, MAN) | PURPLE — ___ HAND (SECOND, OFF, HELPING, SHORT)
+
+SET 17: YELLOW — Types of Containers (JAR, CAN, VAT, TUB) | GREEN — Words for Sneaky (SLY, FURTIVE, SLINKY, STEALTHY) | BLUE — Words Ending in "-WORK" (FRAME, LEG, ART, TEAM) | PURPLE — ___ ROOT (GINGER, TAP, SQUARE, DEEP)
+
+SET 18: YELLOW — Light Foods (SALAD, BROTH, SORBET, CEVICHE) | GREEN — Things That Inflate (BALLOON, LUNG, RAFT, AIRBAG) | BLUE — Words That Mean "Sharp" (ACUTE, POINTED, KEEN, BITING) | PURPLE — ___ ROCK (FOLK, HARD, PET, VOLCANIC)
+
+SET 19: YELLOW — Things Made of Wood (LUMBER, TIMBER, PLANK, BOARD) | GREEN — Noisy Actions (CLANG, RATTLE, CLATTER, THUD) | BLUE — Containers of Knowledge (ARCHIVE, TOME, DATABASE, JOURNAL) | PURPLE — ___ FISH (SWORD, LION, PUFFER, BUTTER)
+
+SET 20: YELLOW — Types of Bumps (LUMP, KNOT, NUB, WELT) | GREEN — "Very Hot" Words (SCALDING, SEARING, BLAZING, FIERY) | BLUE — Words Ending in "-TIME" (NIGHT, PART, RUN, LIFE) | PURPLE — ___ SLEEPER (HEAVY, LIGHT, DEEP, SILENT)`;
+
 async function generateComicImage(prompt: string): Promise<string | null> {
   try {
     console.log('Generating comic image...');
@@ -212,6 +257,374 @@ async function generateComicImage(prompt: string): Promise<string | null> {
   }
 }
 
+async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<string | null> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: maxTokens,
+        temperature: 0.9
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI error:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (error) {
+    console.error('OpenAI call failed:', error);
+    return null;
+  }
+}
+
+async function generateConnectionsPuzzle(): Promise<any> {
+  console.log('Generating Connections puzzle with AI...');
+  
+  const prompt = `${CONNECTIONS_EXAMPLES}
+
+Generate a brand new, unique NYT-style Connections puzzle that is DIFFERENT from all examples above.
+
+RULES:
+- 4 categories with exactly 4 words each (16 words total)
+- Yellow (difficulty 0): Easiest, most obvious connection
+- Green (difficulty 1): Slightly harder
+- Blue (difficulty 2): Tricky, might have red herrings
+- Purple (difficulty 3): Hardest, often wordplay or "___ WORD" format
+- All 16 words must be UNIQUE (no repeats)
+- Words should be single words, UPPERCASE, max 10 characters
+- Categories should be clever but solvable
+- Avoid words from the examples above
+
+Return ONLY valid JSON in this exact format:
+{
+  "categories": [
+    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 0 },
+    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 1 },
+    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 2 },
+    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 3 }
+  ]
+}`;
+
+  const result = await callOpenAI(
+    'You are an expert puzzle creator for the New York Times. Create clever, fair word puzzles.',
+    prompt
+  );
+
+  if (result) {
+    try {
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(cleaned);
+    } catch (e) {
+      console.error('Failed to parse Connections JSON:', e);
+    }
+  }
+
+  // Fallback puzzle
+  return {
+    categories: [
+      { name: "CARD GAMES", words: ["POKER", "BRIDGE", "RUMMY", "HEARTS"], difficulty: 0 },
+      { name: "TYPES OF DANCES", words: ["SALSA", "TANGO", "WALTZ", "SWING"], difficulty: 1 },
+      { name: "THINGS THAT ARE GOLDEN", words: ["GATE", "RULE", "TICKET", "RATIO"], difficulty: 2 },
+      { name: "___ BAND", words: ["RUBBER", "ROCK", "WEDDING", "GARAGE"], difficulty: 3 }
+    ]
+  };
+}
+
+async function generateMiniCrossword(): Promise<any> {
+  console.log('Generating Mini Crossword with AI...');
+
+  const prompt = `Generate a 5x5 mini crossword puzzle like the NYT Mini.
+
+RULES:
+- 5x5 grid where "." represents black/blocked squares
+- Black squares should create valid crossword symmetry (180-degree rotational symmetry)
+- All white cells must be connected
+- Every row and column with white cells must have at least one word
+- Words must be real English words, at least 3 letters
+- Clues should be clever but fair, similar to NYT style
+
+Return ONLY valid JSON in this exact format:
+{
+  "grid": [
+    ["L","E","A","P","S"],
+    ["A","V","E","R","T"],
+    ["S","E","E",".","."],
+    ["T","R","Y",".","A"],
+    [".",".",".","F","T"]
+  ],
+  "clues": {
+    "across": [
+      { "number": 1, "clue": "Clue text here", "answer": "LEAPS", "row": 0, "col": 0 },
+      { "number": 6, "clue": "Clue text", "answer": "AVERT", "row": 1, "col": 0 }
+    ],
+    "down": [
+      { "number": 1, "clue": "Clue text", "answer": "LAST", "row": 0, "col": 0 },
+      { "number": 2, "clue": "Clue text", "answer": "EVER", "row": 0, "col": 1 }
+    ]
+  }
+}
+
+Generate a completely different puzzle with proper symmetry and interlocking words. Number clues starting from 1, going left-to-right, top-to-bottom for each word start position.`;
+
+  const result = await callOpenAI(
+    'You are an expert crossword puzzle constructor for the New York Times.',
+    prompt,
+    2000
+  );
+
+  if (result) {
+    try {
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      // Validate grid is 5x5
+      if (parsed.grid && parsed.grid.length === 5 && parsed.grid[0].length === 5) {
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse Mini Crossword JSON:', e);
+    }
+  }
+
+  // Fallback puzzle
+  return {
+    grid: [
+      ["S","T","A","R","T"],
+      ["H","E","R","O","S"],
+      ["O","V","E","R","T"],
+      ["R","E","N","E","W"],
+      ["T","S",".",".","."]
+    ],
+    clues: {
+      across: [
+        { number: 1, clue: "Begin", answer: "START", row: 0, col: 0 },
+        { number: 6, clue: "Brave ones", answer: "HEROS", row: 1, col: 0 },
+        { number: 7, clue: "Not hidden", answer: "OVERT", row: 2, col: 0 },
+        { number: 8, clue: "Extend a subscription", answer: "RENEW", row: 3, col: 0 }
+      ],
+      down: [
+        { number: 1, clue: "Brief", answer: "SHORT", row: 0, col: 0 },
+        { number: 2, clue: "At any point", answer: "EVER", row: 0, col: 1 },
+        { number: 3, clue: "Amphitheater", answer: "ARENA", row: 0, col: 2 },
+        { number: 4, clue: "Paddle", answer: "ROW", row: 0, col: 3 },
+        { number: 5, clue: "Commotion", answer: "STEW", row: 0, col: 4 }
+      ]
+    }
+  };
+}
+
+async function generateCrossword(): Promise<any> {
+  console.log('Generating Full Crossword with AI...');
+
+  const prompt = `Generate a 15x15 crossword puzzle grid and clues in NYT style.
+
+RULES:
+- 15x15 grid where "." represents black squares
+- Must have 180-degree rotational symmetry
+- All white cells must be connected
+- No 2-letter words (minimum 3 letters)
+- Should have approximately 30-40 clues across and 30-40 down
+- Real English words only
+
+Return ONLY valid JSON with:
+{
+  "grid": [15 arrays of 15 characters each, using uppercase letters and "." for black],
+  "clues": {
+    "across": [{ "number": 1, "clue": "text", "answer": "WORD", "row": 0, "col": 0 }, ...],
+    "down": [{ "number": 1, "clue": "text", "answer": "WORD", "row": 0, "col": 0 }, ...]
+  }
+}
+
+Create a solvable puzzle with clever clues.`;
+
+  const result = await callOpenAI(
+    'You are an expert crossword constructor for the New York Times.',
+    prompt,
+    8000
+  );
+
+  if (result) {
+    try {
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (parsed.grid && parsed.grid.length === 15) {
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse Crossword JSON:', e);
+    }
+  }
+
+  // Generate a simple valid 15x15 grid as fallback
+  const fallbackGrid = Array(15).fill(null).map((_, r) => {
+    return Array(15).fill(null).map((_, c) => {
+      // Create a simple pattern with some black squares
+      if ((r === 4 || r === 10) && (c === 4 || c === 10)) return '.';
+      if ((r === 7) && (c === 0 || c === 14)) return '.';
+      if ((r === 0 || r === 14) && (c === 7)) return '.';
+      return 'A'; // Placeholder
+    });
+  });
+
+  return {
+    grid: fallbackGrid,
+    clues: {
+      across: [
+        { number: 1, clue: "First word", answer: "AAAA", row: 0, col: 0 }
+      ],
+      down: [
+        { number: 1, clue: "First down", answer: "AAAA", row: 0, col: 0 }
+      ]
+    }
+  };
+}
+
+async function generateSpellingBee(): Promise<any> {
+  console.log('Generating Spelling Bee with AI...');
+
+  const prompt = `Generate an NYT-style Spelling Bee puzzle.
+
+RULES:
+- Pick 7 unique letters (one center letter, 6 outer letters)
+- Center letter MUST be used in every word
+- Only use common letters that form many words
+- List ALL valid English words (4+ letters) using ONLY those 7 letters
+- Words can repeat letters
+- Identify pangrams (words using all 7 letters)
+- Only include REAL, common English dictionary words
+- Aim for 20-50 valid words
+- Each word must be at least 4 letters
+
+Return ONLY valid JSON:
+{
+  "centerLetter": "A",
+  "outerLetters": ["B","C","D","E","F","G"],
+  "validWords": ["BEAD", "CAGE", "DECADE", ...all valid words...],
+  "pangrams": ["ABCDEFG", ...]
+}
+
+Common good letter sets include vowel-heavy combinations like AEILNRT, AEINRST, AELNOST.`;
+
+  const result = await callOpenAI(
+    'You are an expert Spelling Bee puzzle creator. Only include real English dictionary words.',
+    prompt,
+    3000
+  );
+
+  if (result) {
+    try {
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (parsed.centerLetter && parsed.outerLetters && parsed.validWords) {
+        // Validate words use only the available letters
+        const allLetters = [parsed.centerLetter, ...parsed.outerLetters].map((l: string) => l.toUpperCase());
+        const validatedWords = parsed.validWords.filter((word: string) => {
+          const upper = word.toUpperCase();
+          if (upper.length < 4) return false;
+          if (!upper.includes(parsed.centerLetter.toUpperCase())) return false;
+          for (const char of upper) {
+            if (!allLetters.includes(char)) return false;
+          }
+          return true;
+        });
+        
+        const validatedPangrams = parsed.pangrams?.filter((word: string) => {
+          const upper = word.toUpperCase();
+          const wordLetters = new Set(upper.split(''));
+          return allLetters.every((l: string) => wordLetters.has(l));
+        }) || [];
+
+        return {
+          centerLetter: parsed.centerLetter.toUpperCase(),
+          outerLetters: parsed.outerLetters.map((l: string) => l.toUpperCase()),
+          validWords: validatedWords.map((w: string) => w.toUpperCase()),
+          pangrams: validatedPangrams.map((w: string) => w.toUpperCase())
+        };
+      }
+    } catch (e) {
+      console.error('Failed to parse Spelling Bee JSON:', e);
+    }
+  }
+
+  // Fallback puzzle with verified words
+  return {
+    centerLetter: "L",
+    outerLetters: ["A","E","N","R","T","I"],
+    validWords: [
+      "LATER", "TRAIL", "TRIAL", "ALERT", "ALTER", "LINER", "LITER", "LITRE",
+      "RENAL", "LEARN", "ALINE", "ALIEN", "LINER", "TILER", "RILE", "TILE",
+      "LITE", "RAIL", "TAIL", "TALL", "TELL", "TILL", "RILL", "TRILL",
+      "ENTAIL", "RETAIL", "RATLINE", "LATRINE", "RELIANT", "LITERAL"
+    ],
+    pangrams: ["LATRINE", "RATLINE", "RELIANT"]
+  };
+}
+
+async function generateWordleWord(): Promise<string> {
+  console.log('Generating Wordle word with AI...');
+
+  const prompt = `Pick a single 5-letter English word for today's Wordle puzzle.
+
+RULES:
+- Must be exactly 5 letters
+- Must be a common, well-known English word
+- Should NOT be obscure, archaic, or slang
+- Should be a word most English speakers would know
+- Pick words that are fair but interesting
+
+Return ONLY the word in uppercase, nothing else. Just the 5-letter word.`;
+
+  const result = await callOpenAI(
+    'You are a Wordle word selector. Pick fair, common 5-letter words.',
+    prompt,
+    50
+  );
+
+  if (result) {
+    const word = result.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    if (word.length === 5) {
+      return word;
+    }
+  }
+
+  // Fallback words
+  const fallbacks = ["CRANE", "SLATE", "TRACE", "CRATE", "STARE", "RAISE", "ARISE", "SHARE", "PLACE", "DEALT"];
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+}
+
+async function generatePuzzles(): Promise<Array<{ type: string; data: any }>> {
+  console.log('Generating all puzzles with AI...');
+
+  // Generate all puzzles in parallel
+  const [connections, mini, crossword, spellingBee, wordleWord] = await Promise.all([
+    generateConnectionsPuzzle(),
+    generateMiniCrossword(),
+    generateCrossword(),
+    generateSpellingBee(),
+    generateWordleWord()
+  ]);
+
+  return [
+    { type: "wordle", data: { word: wordleWord } },
+    { type: "connections", data: connections },
+    { type: "mini", data: mini },
+    { type: "crossword", data: crossword },
+    { type: "spelling_bee", data: spellingBee }
+  ];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -222,6 +635,10 @@ serve(async (req) => {
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
     }
 
     const now = new Date();
@@ -332,7 +749,6 @@ serve(async (req) => {
       // If JSON appears truncated (doesn't end with }), try to repair it
       if (!result.trim().endsWith('}')) {
         console.log('JSON appears truncated, attempting repair...');
-        // Find last complete object/array and close remaining brackets
         let bracketCount = 0;
         let braceCount = 0;
         for (const c of result) {
@@ -341,9 +757,7 @@ serve(async (req) => {
           if (c === '[') bracketCount++;
           if (c === ']') bracketCount--;
         }
-        // Close any unclosed strings first
         if (inString) result += '"';
-        // Close brackets/braces
         while (bracketCount > 0) { result += ']'; bracketCount--; }
         while (braceCount > 0) { result += '}'; braceCount--; }
       }
@@ -419,8 +833,10 @@ serve(async (req) => {
 
     console.log('Edition saved successfully:', data.id);
 
-    // Generate game puzzles
-    const puzzles = generatePuzzles();
+    // Generate AI-powered game puzzles
+    console.log('Generating AI-powered puzzles...');
+    const puzzles = await generatePuzzles();
+    
     for (const puzzle of puzzles) {
       await supabase.from('game_puzzles').insert({
         edition_id: data.id,
@@ -428,7 +844,7 @@ serve(async (req) => {
         puzzle_data: puzzle.data,
       });
     }
-    console.log('Game puzzles generated');
+    console.log('Game puzzles generated and saved');
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -448,58 +864,3 @@ serve(async (req) => {
     });
   }
 });
-
-function generatePuzzles() {
-  const WORDS_5 = ["APPLE","BEACH","CHAIR","DANCE","EAGLE","FLAME","GRAPE","HOUSE","IDEAL","JOKER","KNIFE","LEMON","MAPLE","NOBLE","OLIVE","PIANO","QUEEN","RIVER","STONE","TRAIN","UNCLE","VIVID","WHALE","XEROX","YOUNG","ZEBRA","BRAIN","CLOCK","DREAM","EARTH","FIELD","GHOST","HEART","IMAGE","JUDGE","LIGHT","MONEY","NIGHT","OCEAN","PEACE","QUIET","RADIO","SPACE","TABLE","UNITY","VIDEO","WATER","YOUTH","WORLD","ALERT"];
-  
-  const wordleWord = WORDS_5[Math.floor(Math.random() * WORDS_5.length)];
-
-  const connectionCategories = [
-    { name: "FRUITS", words: ["APPLE", "GRAPE", "LEMON", "OLIVE"], difficulty: 0 },
-    { name: "FURNITURE", words: ["CHAIR", "TABLE", "COUCH", "SHELF"], difficulty: 1 },
-    { name: "WEATHER", words: ["STORM", "CLOUD", "SUNNY", "WINDY"], difficulty: 2 },
-    { name: "MUSIC", words: ["PIANO", "GUITAR", "DRUMS", "VIOLIN"], difficulty: 3 },
-  ];
-
-  const miniGrid = [
-    ["C","A","T","S","."],
-    ["H","E","R","O","S"],
-    ["A","L","E","R","T"],
-    ["I","D","E","A","L"],
-    ["R",".","N","T","S"],
-  ];
-
-  const spellingBeeLetters = ["P","L","A","N","E","T","S"];
-  
-  return [
-    { type: "wordle", data: { word: wordleWord } },
-    { type: "connections", data: { categories: connectionCategories } },
-    { type: "mini", data: { 
-      grid: miniGrid,
-      clues: {
-        across: [
-          { number: 1, clue: "Felines", answer: "CATS", row: 0, col: 0 },
-          { number: 5, clue: "Brave person", answer: "HEROS", row: 1, col: 0 },
-          { number: 6, clue: "Warning", answer: "ALERT", row: 2, col: 0 },
-          { number: 7, clue: "Perfect", answer: "IDEAL", row: 3, col: 0 },
-        ],
-        down: [
-          { number: 1, clue: "Seat", answer: "CHAIR", row: 0, col: 0 },
-          { number: 2, clue: "Beer type", answer: "ALE", row: 0, col: 2 },
-          { number: 3, clue: "Lease", answer: "RENT", row: 2, col: 2 },
-          { number: 4, clue: "Plural suffix", answer: "STS", row: 1, col: 4 },
-        ]
-      }
-    }},
-    { type: "crossword", data: { 
-      grid: Array(15).fill(null).map(() => Array(15).fill(".")),
-      clues: { across: [], down: [] }
-    }},
-    { type: "spelling_bee", data: {
-      centerLetter: "A",
-      outerLetters: ["P","L","N","E","T","S"],
-      validWords: ["PLANET","PLANTS","PLANES","SLANT","PLANT","PLANE","PLATE","SLATE","STEAL","TALES","STALE","LEAN","LANE","LATE","PAST","PANT","SALT","SEAL","SEAT","LAST"],
-      pangrams: ["PLANETS","PLANTS"]
-    }}
-  ];
-}
