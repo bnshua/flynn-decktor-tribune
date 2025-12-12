@@ -2,90 +2,19 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// Common 5-letter words
-const WORDS = [
-  "ABOUT", "ABOVE", "ABUSE", "ACTOR", "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN", "AGENT",
-  "AGREE", "AHEAD", "ALARM", "ALBUM", "ALERT", "ALIEN", "ALIGN", "ALIKE", "ALIVE", "ALLOW",
-  "ALONE", "ALONG", "ALTER", "ANGEL", "ANGER", "ANGLE", "ANGRY", "APART", "APPLE", "APPLY",
-  "ARENA", "ARGUE", "ARISE", "ARMOR", "ARRAY", "ARROW", "ASSET", "AVOID", "AWARD", "AWARE",
-  "BASIC", "BASIS", "BEACH", "BEAST", "BEGIN", "BEING", "BELOW", "BENCH", "BERRY", "BIRTH",
-  "BLACK", "BLADE", "BLAME", "BLANK", "BLAST", "BLEND", "BLIND", "BLOCK", "BLOOD", "BLOOM",
-  "BLOWN", "BOARD", "BOOST", "BOOTH", "BOUND", "BRAIN", "BRAND", "BRAVE", "BREAD", "BREAK",
-  "BRICK", "BRIDE", "BRIEF", "BRING", "BROAD", "BROKE", "BROWN", "BUILD", "BUNCH", "BURST",
-  "CABIN", "CABLE", "CAMEL", "CANDY", "CARRY", "CATCH", "CAUSE", "CHAIN", "CHAIR", "CHAOS",
-  "CHARM", "CHART", "CHASE", "CHEAP", "CHECK", "CHEST", "CHIEF", "CHILD", "CHINA", "CHOSE",
-  "CHUNK", "CLAIM", "CLASS", "CLEAN", "CLEAR", "CLERK", "CLICK", "CLIMB", "CLING", "CLOCK",
-  "CLOSE", "CLOTH", "CLOUD", "COACH", "COAST", "CORAL", "COUCH", "COULD", "COUNT", "COURT",
-  "COVER", "CRACK", "CRAFT", "CRANE", "CRASH", "CRAZY", "CREAM", "CRIME", "CRISP", "CROSS",
-  "CROWD", "CROWN", "CRUEL", "CRUSH", "CURVE", "CYCLE", "DAILY", "DANCE", "DEATH", "DEBUT",
-  "DECAY", "DELAY", "DENSE", "DEPTH", "DEVIL", "DIARY", "DIRTY", "DOUBT", "DOUGH", "DOZEN",
-  "DRAFT", "DRAIN", "DRAMA", "DRANK", "DRAWN", "DREAD", "DREAM", "DRESS", "DRIED", "DRIFT",
-  "DRILL", "DRINK", "DRIVE", "DROWN", "DRUNK", "DYING", "EAGER", "EARLY", "EARTH", "EIGHT",
-  "ELECT", "ELITE", "EMPTY", "ENEMY", "ENJOY", "ENTER", "ENTRY", "EQUAL", "ERROR", "ESSAY",
-  "EVENT", "EVERY", "EXACT", "EXIST", "EXTRA", "FAINT", "FAITH", "FALSE", "FANCY", "FATAL",
-  "FAULT", "FAVOR", "FEAST", "FIELD", "FIFTH", "FIFTY", "FIGHT", "FINAL", "FIRST", "FIXED",
-  "FLAME", "FLASH", "FLEET", "FLESH", "FLOAT", "FLOOD", "FLOOR", "FLOUR", "FLUID", "FLUSH",
-  "FOCUS", "FORCE", "FORGE", "FORTH", "FORTY", "FORUM", "FOUND", "FRAME", "FRANK", "FRAUD",
-  "FRESH", "FRONT", "FROST", "FRUIT", "FULLY", "FUNNY", "GIANT", "GIVEN", "GLASS", "GLOBE",
-  "GLORY", "GOING", "GRACE", "GRADE", "GRAIN", "GRAND", "GRANT", "GRAPE", "GRASP", "GRASS",
-  "GRAVE", "GREAT", "GREEN", "GREET", "GRIEF", "GRILL", "GRIND", "GROSS", "GROUP", "GROVE",
-  "GROWN", "GUARD", "GUESS", "GUEST", "GUIDE", "GUILT", "HABIT", "HAPPY", "HARSH", "HASTE",
-  "HAUNT", "HEART", "HEAVY", "HELLO", "HENCE", "HONEY", "HONOR", "HORSE", "HOTEL", "HOUSE",
-  "HUMAN", "HUMOR", "HURRY", "IDEAL", "IMAGE", "IMPLY", "INDEX", "INNER", "INPUT", "ISSUE",
-  "IVORY", "JOINT", "JONES", "JUDGE", "JUICE", "JUICY", "KNOCK", "KNOWN", "LABEL", "LABOR",
-  "LARGE", "LASER", "LATER", "LAUGH", "LAYER", "LEARN", "LEAST", "LEAVE", "LEGAL", "LEMON",
-  "LEVEL", "LEVER", "LIGHT", "LIMIT", "LINEN", "LIVER", "LIVING", "LOCAL", "LOGIC", "LONELY",
-  "LOOSE", "LORRY", "LOTUS", "LOUD", "LOVER", "LOWER", "LOYAL", "LUCKY", "LUNAR", "LUNCH",
-  "LYING", "MAGIC", "MAJOR", "MAKER", "MANOR", "MAPLE", "MARCH", "MARRY", "MARSH", "MATCH",
-  "MAYOR", "MEANS", "MEANT", "MEDAL", "MEDIA", "MELON", "MERCY", "MERGE", "MERIT", "MERRY",
-  "METAL", "MIDST", "MIGHT", "MINOR", "MINUS", "MIXED", "MODEL", "MONEY", "MONTH", "MORAL",
-  "MOTOR", "MOUNT", "MOUSE", "MOUTH", "MOVIE", "MUSIC", "NAIVE", "NAKED", "NASTY", "NAVAL",
-  "NERVE", "NEVER", "NEWLY", "NIGHT", "NINTH", "NOBLE", "NOISE", "NORTH", "NOTED", "NOVEL",
-  "NURSE", "OCCUR", "OCEAN", "OFFER", "OFTEN", "OLIVE", "ONION", "OPERA", "ORBIT", "ORDER",
-  "ORGAN", "OTHER", "OUGHT", "OUTER", "OWNER", "OXIDE", "OZONE", "PAINT", "PANEL", "PANIC",
-  "PAPER", "PARTY", "PASTA", "PATCH", "PAUSE", "PEACE", "PENNY", "PERCH", "PERIL", "PHASE",
-  "PHONE", "PHOTO", "PIANO", "PIECE", "PILOT", "PINCH", "PITCH", "PLACE", "PLAIN", "PLANE",
-  "PLANT", "PLATE", "PLAZA", "PLEAD", "PLUCK", "POINT", "POLAR", "PORCH", "POSED", "POUND",
-  "POWER", "PRESS", "PRICE", "PRIDE", "PRIME", "PRINT", "PRIOR", "PRIZE", "PROBE", "PRONE",
-  "PROOF", "PROSE", "PROUD", "PROVE", "PROXY", "PULSE", "PUNCH", "PUPIL", "PURSE", "QUEEN",
-  "QUERY", "QUEST", "QUEUE", "QUICK", "QUIET", "QUITE", "QUOTA", "QUOTE", "RADAR", "RADIO",
-  "RAISE", "RALLY", "RANCH", "RANGE", "RAPID", "RATIO", "REACH", "READY", "REALM", "REBEL",
-  "REFER", "REIGN", "RELAX", "REPLY", "REPAY", "RIDER", "RIDGE", "RIFLE", "RIGHT", "RIGID",
-  "RISKY", "RIVAL", "RIVER", "ROBOT", "ROCKY", "ROMAN", "ROAST", "ROGER", "ROMAN", "ROUGE",
-  "ROUGH", "ROUND", "ROUTE", "ROYAL", "RUGBY", "RULER", "RURAL", "SADLY", "SAINT", "SALAD",
-  "SALON", "SANDY", "SAUCE", "SAVED", "SCALE", "SCARE", "SCENE", "SCENT", "SCOPE", "SCORE",
-  "SCOUT", "SCRAP", "SEIZE", "SENSE", "SERVE", "SETUP", "SEVEN", "SHADE", "SHAKE", "SHALL",
-  "SHAME", "SHAPE", "SHARE", "SHARK", "SHARP", "SHEEP", "SHEER", "SHEET", "SHELF", "SHELL",
-  "SHIFT", "SHINE", "SHIRT", "SHOCK", "SHOOT", "SHORT", "SHOUT", "SHOWN", "SHRUG", "SIGHT",
-  "SIGMA", "SILLY", "SINCE", "SIXTH", "SIXTY", "SIZED", "SKILL", "SKULL", "SLASH", "SLATE",
-  "SLAVE", "SLEEP", "SLICE", "SLIDE", "SLOPE", "SMALL", "SMART", "SMELL", "SMILE", "SMOKE",
-  "SNAKE", "SOLAR", "SOLID", "SOLVE", "SORRY", "SOUND", "SOUTH", "SPACE", "SPARE", "SPARK",
-  "SPEAK", "SPEAR", "SPEED", "SPELL", "SPEND", "SPICE", "SPILL", "SPINE", "SPLIT", "SPOKE",
-  "SPORT", "SPRAY", "SQUAD", "STACK", "STAFF", "STAGE", "STAIN", "STAKE", "STALL", "STAMP",
-  "STAND", "STARK", "START", "STATE", "STAYS", "STEAK", "STEAL", "STEAM", "STEEL", "STEEP",
-  "STEER", "STICK", "STILL", "STOCK", "STONE", "STOOD", "STORE", "STORM", "STORY", "STOVE",
-  "STRAP", "STRAW", "STRIP", "STUCK", "STUDY", "STUFF", "STYLE", "SUGAR", "SUITE", "SUNNY",
-  "SUPER", "SURGE", "SWAMP", "SWEAR", "SWEAT", "SWEEP", "SWEET", "SWIFT", "SWING", "SWORD",
-  "TABLE", "TAKEN", "TASTE", "TEACH", "TEETH", "TEMPO", "TENSE", "TENTH", "TERMS", "THANK",
-  "THEFT", "THEME", "THERE", "THICK", "THIEF", "THING", "THINK", "THIRD", "THOSE", "THREE",
-  "THREW", "THROW", "THUMB", "TIGER", "TIGHT", "TIMER", "TINY", "TIRED", "TITLE", "TODAY",
-  "TOKEN", "TOOTH", "TOPIC", "TOTAL", "TOUCH", "TOUGH", "TOWER", "TRACE", "TRACK", "TRADE",
-  "TRAIL", "TRAIN", "TRASH", "TREAT", "TREND", "TRIAL", "TRIBE", "TRICK", "TRIED", "TROOP",
-  "TRUCK", "TRULY", "TRUNK", "TRUST", "TRUTH", "TWICE", "TWIST", "TYLER", "ULTRA", "UNCLE",
-  "UNDER", "UNION", "UNITY", "UNTIL", "UPPER", "UPSET", "URBAN", "USAGE", "USUAL", "VALID",
-  "VALUE", "VALVE", "VAPOR", "VAULT", "VENUS", "VERSE", "VERY", "VIDEO", "VIEWS", "VILLA",
-  "VIRAL", "VIRUS", "VISIT", "VITAL", "VIVID", "VOCAL", "VOICE", "VOTER", "WAGON", "WAIST",
-  "WASTE", "WATCH", "WATER", "WEARY", "WEDGE", "WEIGH", "WEIRD", "WHALE", "WHEAT", "WHEEL",
-  "WHERE", "WHICH", "WHILE", "WHITE", "WHOLE", "WHOSE", "WIDEN", "WIDTH", "WITCH", "WOMAN",
-  "WORLD", "WORRY", "WORSE", "WORST", "WORTH", "WOULD", "WOUND", "WRIST", "WRITE", "WRONG",
-  "WROTE", "YACHT", "YIELD", "YOUNG", "YOUTH", "ZEBRA", "ZONE"
-].filter(w => w.length === 5);
+// Fallback words if database fetch fails
+const FALLBACK_WORDS = [
+  "CRANE", "SLATE", "TRACE", "CRATE", "STARE", "RAISE", "ARISE", "SHARE", 
+  "PLACE", "DEALT", "BRAIN", "DREAM", "FLAME", "GRAPE", "HOUSE", "LIGHT",
+  "MONEY", "OCEAN", "PEACE", "QUIET", "RIVER", "SPACE", "TRAIN", "WORLD"
+];
 
-const getRandomWord = () => {
+const getRandomFallbackWord = () => {
   const today = new Date();
   const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-  return WORDS[seed % WORDS.length];
+  return FALLBACK_WORDS[seed % FALLBACK_WORDS.length];
 };
 
 type LetterState = "correct" | "present" | "absent" | "empty";
@@ -96,15 +25,55 @@ interface LetterResult {
 }
 
 const Wordle = () => {
-  const [targetWord] = useState(() => getRandomWord());
+  const [targetWord, setTargetWord] = useState<string>("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [currentGuess, setCurrentGuess] = useState("");
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
   const [shake, setShake] = useState(false);
   const [usedLetters, setUsedLetters] = useState<Record<string, LetterState>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWord();
+  }, []);
+
+  const fetchWord = async () => {
+    try {
+      const { data: edition } = await supabase
+        .from('newspaper_editions')
+        .select('id')
+        .order('publish_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (edition) {
+        const { data: puzzleData } = await supabase
+          .from('game_puzzles')
+          .select('puzzle_data')
+          .eq('edition_id', edition.id)
+          .eq('game_type', 'wordle')
+          .maybeSingle();
+
+        if (puzzleData?.puzzle_data) {
+          const data = puzzleData.puzzle_data as { word: string };
+          setTargetWord(data.word.toUpperCase());
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Wordle word:', error);
+    }
+    
+    // Fallback to random word
+    setTargetWord(getRandomFallbackWord());
+    setLoading(false);
+  };
 
   const checkGuess = useCallback((guess: string): LetterResult[] => {
+    if (!targetWord) return [];
+    
     const result: LetterResult[] = [];
     const targetArr = targetWord.split("");
     const guessArr = guess.split("");
@@ -134,6 +103,8 @@ const Wordle = () => {
   }, [targetWord]);
 
   const submitGuess = useCallback(() => {
+    if (!targetWord) return;
+    
     if (currentGuess.length !== 5) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
@@ -141,7 +112,6 @@ const Wordle = () => {
       return;
     }
 
-    // Check if it's a valid word (simplified - accept all 5-letter combos)
     const upperGuess = currentGuess.toUpperCase();
     
     const results = checkGuess(upperGuess);
@@ -170,7 +140,7 @@ const Wordle = () => {
   }, [currentGuess, guesses, targetWord, checkGuess, usedLetters]);
 
   const handleKeyPress = useCallback((key: string) => {
-    if (gameOver) return;
+    if (gameOver || !targetWord) return;
 
     if (key === "ENTER") {
       submitGuess();
@@ -179,7 +149,7 @@ const Wordle = () => {
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
       setCurrentGuess(prev => prev + key);
     }
-  }, [gameOver, currentGuess, submitGuess]);
+  }, [gameOver, targetWord, currentGuess, submitGuess]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -220,6 +190,14 @@ const Wordle = () => {
       default: return "bg-paper border-rule";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-paper flex items-center justify-center">
+        <p className="font-body text-ink">Loading puzzle...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-paper flex flex-col">
