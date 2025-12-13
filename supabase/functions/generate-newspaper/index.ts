@@ -7,7 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -214,48 +213,6 @@ SET 18: YELLOW — Light Foods (SALAD, BROTH, SORBET, CEVICHE) | GREEN — Thing
 SET 19: YELLOW — Things Made of Wood (LUMBER, TIMBER, PLANK, BOARD) | GREEN — Noisy Actions (CLANG, RATTLE, CLATTER, THUD) | BLUE — Containers of Knowledge (ARCHIVE, TOME, DATABASE, JOURNAL) | PURPLE — ___ FISH (SWORD, LION, PUFFER, BUTTER)
 
 SET 20: YELLOW — Types of Bumps (LUMP, KNOT, NUB, WELT) | GREEN — "Very Hot" Words (SCALDING, SEARING, BLAZING, FIERY) | BLUE — Words Ending in "-TIME" (NIGHT, PART, RUN, LIFE) | PURPLE — ___ SLEEPER (HEAVY, LIGHT, DEEP, SILENT)`;
-
-async function generateComicImage(prompt: string): Promise<string | null> {
-  try {
-    console.log('Generating comic image...');
-    
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [
-          { 
-            role: 'user', 
-            content: `Create a black and white editorial cartoon in a classic 1920s newspaper style. Simple bold linework, crosshatching for shading. Satirical and funny. The scene: ${prompt}` 
-          }
-        ],
-        modalities: ['image', 'text']
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Image generation failed:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
-    if (imageUrl) {
-      console.log('Comic image generated successfully');
-      return imageUrl;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error generating comic image:', error);
-    return null;
-  }
-}
 
 async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<string | null> {
   try {
@@ -633,10 +590,6 @@ serve(async (req) => {
   try {
     console.log('Starting newspaper generation...');
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
-
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured');
     }
@@ -648,43 +601,11 @@ serve(async (req) => {
 
     console.log(`Generating edition for: ${publishDate}`);
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!` }
-        ],
-        max_tokens: 8000,
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
-      
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    const generatedText = aiData.choices?.[0]?.message?.content;
+    const generatedText = await callOpenAI(
+      systemPrompt,
+      `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!`,
+      8000
+    );
 
     if (!generatedText) {
       throw new Error('No content generated from AI');
@@ -770,22 +691,15 @@ serve(async (req) => {
       throw new Error('Failed to parse AI-generated content as JSON');
     }
 
-    console.log('Content parsed, generating comic images...');
+    console.log('Setting comics section to Coming Soon placeholder...');
 
-    if (content.comics && Array.isArray(content.comics)) {
-      const comicsWithImages = await Promise.all(
-        content.comics.map(async (comic: any) => {
-          const imagePrompt = comic.imagePrompt || `${comic.title}: ${comic.caption}`;
-          const imageUrl = await generateComicImage(imagePrompt);
-          return {
-            ...comic,
-            imageUrl: imageUrl
-          };
-        })
-      );
-      content.comics = comicsWithImages;
-      console.log('Comic images generated');
-    }
+    content.comics = [
+      {
+        title: "COMING SOON",
+        caption: "Editorial cartoons are coming soon to the Flynn-Decktor Tribune.",
+        imageUrl: null,
+      },
+    ];
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
