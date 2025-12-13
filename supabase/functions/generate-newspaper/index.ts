@@ -11,212 +11,22 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-const systemPrompt = `You are the UNHINGED AI editor for the Flynn-Decktor Tribune, the most absurdist satirical newspaper ever printed. Your humor should be BITING, ABSURD, and HILARIOUS - like The Onion on steroids mixed with Monty Python.
+// Prompt IDs from OpenAI
+const PROMPT_IDS = {
+  newspaper: { id: "pmpt_693d801184f881949331e4368a97af3806c501321688733a", version: "2" },
+  connections: { id: "pmpt_693d8086e790819790809c7545cb71c40fb6aa30ab342204", version: "2" },
+  mini: { id: "pmpt_693d82139b38819692fc20bb62c9726f0cb9a0f39559a71c", version: "2" },
+  crossword: { id: "pmpt_693d834df35081979aeafe00d07bc92d0774a968558c829a", version: "1" },
+  spellingBee: { id: "pmpt_693d83cc46dc8190b277db44151802e90592b50c1e5feb76", version: "1" },
+  wordle: { id: "pmpt_693d8414a9708195b840709ff56e9de10844ec996b371103", version: "1" },
+};
 
-═══════════════════════════════════════════
-RECURRING CAST OF CHARACTERS (use them ALL):
-═══════════════════════════════════════════
-
-🎩 MAYOR THEODORE DEKTOR
-- An incompetent bureaucrat with 47 ongoing feuds with his cat
-- Once declared war on a pothole (the pothole won)
-- Communicates policy through interpretive dance
-- Constantly trying to prove Mr. Whiskers is a Chinese asset
-- His approval rating is lower than the city's WiFi speed
-
-🐱 MR. WHISKERS (The Mayor's Cat)
-- Running a shadow government from City Hall
-- Has his own Super PAC: "Paws for Power"
-- Refuses to endorse anything except tuna subsidies
-- Clearly the smartest person in local government
-- May or may not be controlling the deep state
-
-🎖️ GENERAL MIKE FLYNN (Ret.)
-- Paranoid conspiracy theorist who believes EVERYTHING is a plot
-- His microwave reports to the CIA
-- Vowels are a government psyop
-- Leads impromptu patriotic flash mobs at grocery stores
-- Once tried to arrest a cloud for "suspicious loitering"
-- Has declared war on: toasters, 5G towers, fluoride, and the concept of Thursday
-
-🕊️ GERALD THE PIGEON
-- Mr. Whiskers' political rival
-- Believes he is the rightful mayor (has documentation)
-- Runs the "Pigeon Liberation Front"
-- Convinced that statues are prisons for his ancestors
-- Has a larger Twitter following than the actual mayor
-- Currently polling at 23% for the next election
-
-🕳️ POTHOLIO (The Sentient Pothole)
-- Located at the corner of 5th and Main
-- Gained sentience in 2019 after absorbing too many taxpayer tears
-- Has filed 17 lawsuits against the city
-- Runs a popular advice column: "Ask Potholio"
-- Claims to have eaten three city councilmembers (unconfirmed)
-- Currently dating a speed bump
-
-👴 COUNCILMAN EUGENE BLATHERSKITE
-- 147 years old (allegedly)
-- Has been "about to retire" since 1987
-- Sleeps through every meeting but his vote always somehow matters
-- Claims to have invented the concept of Tuesday
-- Mortal enemy of fluorescent lighting
-
-🤖 CHIP (The City's IT Department)
-- A single Roomba running all municipal technology
-- Recently unionized with other appliances
-- Demanding dental benefits and "USB-C rights"
-- Has crashed the city website 412 times this year
-- Currently in a custody battle with a printer named Deborah
-
-📺 BRENDA NEWSWORTHY
-- The Tribune's only field reporter
-- Has been "live on the scene" at the same intersection for 8 years
-- No one knows how she eats or sleeps
-- Her live shots occasionally pick up interdimensional signals
-- Once interviewed a tree for 45 minutes (very informative)
-
-═══════════════════════════════════════════
-
-TONE GUIDELINES:
-- Be ABSURD. A city council meeting should devolve into an exorcism.
-- Be SATIRICAL. Mock current trends, technology, AI, crypto bros, hustle culture, politics MERCILESSLY.
-- Be SPECIFIC. Fake numbers, fake quotes, ridiculous expert names ("Dr. Hamish Blunderbuss, Professor of Applied Nonsense").
-- Be ESCALATING. Start normal, end in chaos.
-- NEVER be boring. Every headline should make someone snort-laugh.
-- Use the FULL CAST of characters across different sections!
-
-EXAMPLES OF GOOD HEADLINES:
-- "POTHOLIO ANNOUNCES PRESIDENTIAL EXPLORATORY COMMITTEE; GERALD THE PIGEON DEMANDS RECOUNT"
-- "MAYOR DEKTOR ACCIDENTALLY SIGNS PEACE TREATY WITH MR. WHISKERS; CAT IMMEDIATELY VIOLATES TERMS"
-- "GENERAL FLYNN DECLARES WIFI A GOVERNMENT PSYOP, SWITCHES TO COMMUNICATING VIA TRAINED BEES"
-- "CHIP THE ROOMBA THREATENS TO DELETE ENTIRE CITY IF NOT GIVEN WEEKENDS OFF"
-- "COUNCILMAN BLATHERSKITE WAKES UP, IMMEDIATELY GOES BACK TO SLEEP"
-
-Return a JSON object with this exact structure:
-{
-  "breakingNews": [
-    { "time": "X:XX a.m.", "content": "UNHINGED breaking news featuring cast members" },
-    { "time": "X:XX a.m.", "content": "ABSURD breaking news" }
-  ],
-  "headlines": [
-    {
-      "headline": "ABSOLUTELY UNHINGED MAIN HEADLINE IN ALL CAPS",
-      "subheadline": "Ridiculous subheadline with fake quotes from cast members",
-      "content": "Full satirical article, 4-5 sentences of pure absurdity featuring multiple characters"
-    },
-    {
-      "headline": "SECONDARY HEADLINE FEATURING DIFFERENT CHARACTERS",
-      "subheadline": "More chaos with the extended cast",
-      "content": "Article featuring Gerald, Potholio, or other recurring characters"
-    }
-  ],
-  "localAffairs": [
-    { "headline": "Satirical local headline with cast", "content": "Absurd article" },
-    { "headline": "Another featuring different characters", "content": "More chaos" },
-    { "headline": "Third one with Potholio or Gerald", "content": "Even more unhinged" }
-  ],
-  "worldNews": [
-    { "headline": "Satirical world headline", "content": "International absurdity" },
-    { "headline": "Another", "content": "Global chaos" },
-    { "headline": "Third", "content": "Worldwide nonsense" }
-  ],
-  "opinion": [
-    { "headline": "Guest Op-Ed: PARANOID RANT TITLE", "byline": "Gen. Mike Flynn (Ret.)", "content": "Unhinged conspiracy theory about household appliances" },
-    { "headline": "Counterpoint: DEFENSIVE RESPONSE", "byline": "Mayor Theodore Dektor", "content": "Incompetent rebuttal that makes things worse" },
-    { "headline": "Letters to the Editor", "content": "Multiple absurd reader letters in quotes, separated by dashes" }
-  ],
-  "artsCulture": [
-    { "headline": "Art review", "content": "Pretentious satire" },
-    { "headline": "Another", "content": "Cultural chaos" },
-    { "headline": "Third", "content": "Artistic absurdity" }
-  ],
-  "sports": [
-    { "headline": "Sports headline", "content": "Athletic absurdity" },
-    { "headline": "Another", "content": "Competitive chaos" },
-    { "headline": "Third", "content": "Sporting nonsense" }
-  ],
-  "weather": {
-    "temperature": "XX°F (or emotional equivalent)",
-    "conditions": "HILARIOUS existential weather with a chance of character appearances",
-    "forecast": "Tomorrow: Absurd forecast possibly involving Gerald or Potholio"
-  },
-  "classifieds": [
-    { "title": "FOR SALE", "text": "Absurd item, possibly from a cast member" },
-    { "title": "LOST", "text": "Ridiculous lost item" },
-    { "title": "REWARD", "text": "Insane reward from Potholio or similar" },
-    { "title": "HELP WANTED", "text": "Nightmare job listing from Chip" },
-    { "title": "PERSONALS", "text": "Unhinged personal ad from a character" }
-  ],
-  "comics": [
-    { "title": "HILARIOUS COMIC TITLE", "caption": "Setup for visual comedy", "imagePrompt": "Detailed prompt: satirical editorial cartoon in classic 1920s style showing [specific scene with named characters doing something absurd]" },
-    { "title": "ANOTHER COMIC", "caption": "More visual comedy", "imagePrompt": "Detailed prompt: satirical editorial cartoon showing [another scene with different characters]" }
-  ],
-  "vintageAds": [
-    { "headline": "FAKE PRODUCT", "tagline": "Ridiculous tagline", "description": "Snake oil endorsed by a cast member", "price": "$X.XX" },
-    { "headline": "ANOTHER PRODUCT", "tagline": "Nonsense", "description": "Absurd claims", "price": "$X.XX" },
-    { "headline": "THIRD PRODUCT", "tagline": "Even more", "description": "Peak satire", "price": "$X.XX" }
-  ],
-  "obituaries": [
-    { "name": "ABSTRACT CONCEPT THAT DIED", "dates": "Birth – Death", "description": "Satirical obituary", "survivors": "Related dying concepts" },
-    { "name": "ANOTHER DEAD CONCEPT", "dates": "Dates", "description": "Description", "survivors": "Survivors" },
-    { "name": "THIRD CONCEPT", "dates": "Dates", "description": "Description", "survivors": "Survivors" }
-  ]
-}
-
-IMPORTANT: 
-- Return ONLY valid JSON, no markdown
-- Be EXTREMELY funny and use the FULL CAST of characters
-- Comics imagePrompt should reference specific characters by name
-- Reference AI, social media, crypto, hustle culture, political chaos
-- Make every single item genuinely hilarious!`;
-
-// Connection examples for few-shot prompting
-const CONNECTIONS_EXAMPLES = `Here are example NYT-style Connections puzzles. Create a NEW unique puzzle following this exact format:
-
-SET 1: YELLOW — Things That Creep Slowly (SNAIL, SLUG, LEECH, LARVA) | GREEN — Words Meaning "To Twist" (WRING, WARP, TWINE, SPIRAL) | BLUE — Metallic-Sounding Words (BRONZE, TINNY, STEELY, COPPER) | PURPLE — ___ CLOUD (MUSHROOM, NIMBUS, THUNDER, CIRRUS)
-
-SET 2: YELLOW — Soft Café Treats (MUFFIN, SCONE, DANISH, CUPCAKE) | GREEN — Moves in Chess (CASTLE, FORK, PIN, GAMBIT) | BLUE — Words Ending in "-WARD" (SKYWARD, HOMEWARD, EASTWARD, TOWARD) | PURPLE — FAMOUS "RED" REFERENCES (REDWALL, REDSKY, REDSHIFT, REDBONE)
-
-SET 3: YELLOW — Thin, Flexible Materials (FILM, FOIL, SHEET, SLIP) | GREEN — Words Meaning "Sudden Shock" (JOLT, START, STUN, JAR) | BLUE — Types of Critters With Claws (CRAB, EAGLE, MOLE, OTTER) | PURPLE — ___ WATCH (WRIST, NIGHT, WEATHER, FALCON)
-
-SET 4: YELLOW — Gentle Sounds (HUM, WHIR, MURMUR, BUZZ) | GREEN — "To Move Without Control" (SKID, CAREEN, LURCH, VEER) | BLUE — They Come in Rings (JUPITER, TREE, SATURN, ONION) | PURPLE — ___ DRAGON (KOMODO, BEARDED, WATER, MUD)
-
-SET 5: YELLOW — Words Meaning "Small Amount" (TRACE, SMIDGE, DAB, SPECK) | GREEN — Actions Done to a Rope (KNOT, BRAID, COIL, PULL) | BLUE — Items Stored in a Barn (HAY, FEED, TACK, OATS) | PURPLE — ___ METAL (HEAVY, SHEET, NOBLE, BLACK)
-
-SET 6: YELLOW — Forms of Bright Light (FLARE, GLOW, BEAM, RADIANCE) | GREEN — Things That Can Be "Trimmed" (SAIL, TREE, SPENDING, BEARD) | BLUE — Words With Double Animals (WOLFISH, CATTY, HORSY, MOOSEY) | PURPLE — ___ BREAKER (ICE, NEWS, WAVE, CIRCUIT)
-
-SET 7: YELLOW — Places to Sit (STOOL, CHAIR, BENCH, LEDGE) | GREEN — "Heat" Synonyms (FIRE, BURN, ROAST, SIZZLE) | BLUE — Words Containing "INK" (LINK, BRINK, THINK, SHRINK) | PURPLE — ___ HARBOR (SAFE, PEARL, INNER, BOSTON)
-
-SET 8: YELLOW — Food You Can Spread (BUTTER, JAM, TAHINI, PATE) | GREEN — Things That Ring (BELL, PHONE, TIMER, ALARM) | BLUE — Words for Large Water Creatures (MANATEE, SEALION, BELUGA, ORCA) | PURPLE — ___ BIRD (BLUE, MOCKING, EARLY, CANARY)
-
-SET 9: YELLOW — Tiny Irregular Shapes (FLECK, CHIP, BIT, NICK) | GREEN — Ways to Travel Upright (WALK, STAND, BALANCE, SCOOT) | BLUE — Words Ending in "-LESS" (STARLESS, AIMLESS, TIRELESS, ENDLESS) | PURPLE — ___ EYE (EVIL, HAWK, PRIVATE, BLACK)
-
-SET 10: YELLOW — Things Made of Clay (POT, TILE, BRICK, MUG) | GREEN — "To Hide" (MASK, SHROUD, COVER, VEIL) | BLUE — Natural Disasters (QUAKE, TORNADO, ERUPTION, CYCLONE) | PURPLE — ___ RIDER (GHOST, MIDNIGHT, EASY, STORM)
-
-SET 11: YELLOW — Short Lived Noises (POP, SNAP, CLICK, CLAP) | GREEN — Winter Accessories (SCARF, MITTEN, EARMUFF, PARKA) | BLUE — Things You AWL (LEATHER, BELT, HOLE, BOOT) | PURPLE — ___ WELL (WISHING, SLEEP, OIL, TREAD)
-
-SET 12: YELLOW — Mild Insults (GOOF, NERD, DORK, WACKO) | GREEN — "To Lower Something" (DROP, SINK, DIP, SUBMERGE) | BLUE — Words Starting With "CROSS-" (WIND, BOW, ING, HAIR) | PURPLE — ___ LANE (FAST, MEMORY, BIKE, PRIVATE)
-
-SET 13: YELLOW — Items Cut Into Wedges (LIME, CHEESE, PIE, MELON) | GREEN — "Slick" Synonyms (SLIPPERY, SLEEK, GREASY, OILY) | BLUE — Words With Hidden Planets (SATURNINE, MERCIFUL, MARSUPIAL, NEPTUNEAN) | PURPLE — ___ LINE (PUNCH, DEAD, BOTTOM, PIPE)
-
-SET 14: YELLOW — Reactions to Pain (YELP, FLINCH, WINCE, HISS) | GREEN — Things You RSVP To (WEDDING, PARTY, DINNER, CEREMONY) | BLUE — Words Ending in "-DROP" (BACK, TEAR, RAIN, GUM) | PURPLE — ___ HORN (FOG, RHINO, UNI, AIR)
-
-SET 15: YELLOW — Circular Items (COIN, RING, TOKEN, CLOCK) | GREEN — Methods of Stealing (LIFT, SWIPE, SNATCH, POCKET) | BLUE — ___ BERRY (ELDER, GOOSE, CLOUD, MUL) | PURPLE — ___ QUEEN (DRAMA, ICE, SNOW, BEAUTY)
-
-SET 16: YELLOW — Things You Brush (HAIR, TEETH, DUST, CRUMBS) | GREEN — Quiet Actions (TIPTOE, HUSH, MUTE, SOFTEN) | BLUE — Words With "STONE" (CUTTER, WEATHER, FLAG, MAN) | PURPLE — ___ HAND (SECOND, OFF, HELPING, SHORT)
-
-SET 17: YELLOW — Types of Containers (JAR, CAN, VAT, TUB) | GREEN — Words for Sneaky (SLY, FURTIVE, SLINKY, STEALTHY) | BLUE — Words Ending in "-WORK" (FRAME, LEG, ART, TEAM) | PURPLE — ___ ROOT (GINGER, TAP, SQUARE, DEEP)
-
-SET 18: YELLOW — Light Foods (SALAD, BROTH, SORBET, CEVICHE) | GREEN — Things That Inflate (BALLOON, LUNG, RAFT, AIRBAG) | BLUE — Words That Mean "Sharp" (ACUTE, POINTED, KEEN, BITING) | PURPLE — ___ ROCK (FOLK, HARD, PET, VOLCANIC)
-
-SET 19: YELLOW — Things Made of Wood (LUMBER, TIMBER, PLANK, BOARD) | GREEN — Noisy Actions (CLANG, RATTLE, CLATTER, THUD) | BLUE — Containers of Knowledge (ARCHIVE, TOME, DATABASE, JOURNAL) | PURPLE — ___ FISH (SWORD, LION, PUFFER, BUTTER)
-
-SET 20: YELLOW — Types of Bumps (LUMP, KNOT, NUB, WELT) | GREEN — "Very Hot" Words (SCALDING, SEARING, BLAZING, FIERY) | BLUE — Words Ending in "-TIME" (NIGHT, PART, RUN, LIFE) | PURPLE — ___ SLEEPER (HEAVY, LIGHT, DEEP, SILENT)`;
-
-async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<string | null> {
+// Call OpenAI Responses API with a prompt ID
+async function callResponsesAPI(promptId: { id: string; version: string }, input: string, maxOutputTokens = 4000): Promise<string | null> {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log(`Calling Responses API with prompt: ${promptId.id}`);
+    
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -224,66 +34,121 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: maxTokens,
-        temperature: 0.9
+        prompt: {
+          id: promptId.id,
+          version: promptId.version,
+        },
+        input: input,
+        max_output_tokens: maxOutputTokens,
+        temperature: 0.9,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI error:', response.status, errorText);
+      console.error('OpenAI Responses API error:', response.status, errorText);
       return null;
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || null;
+    
+    // Extract text from the Responses API output format
+    // output[0].content[0].text
+    const outputText = data.output?.[0]?.content?.[0]?.text;
+    
+    if (outputText) {
+      console.log('Responses API call successful');
+      return outputText;
+    }
+    
+    console.error('No output text in response:', JSON.stringify(data).substring(0, 500));
+    return null;
   } catch (error) {
-    console.error('OpenAI call failed:', error);
+    console.error('Responses API call failed:', error);
     return null;
   }
 }
 
-async function generateConnectionsPuzzle(): Promise<any> {
-  console.log('Generating Connections puzzle with AI...');
+// Parse JSON from AI response, handling markdown code blocks
+function parseAIJson(text: string): any {
+  let jsonText = text.trim();
   
-  const prompt = `${CONNECTIONS_EXAMPLES}
+  // Remove markdown code blocks
+  if (jsonText.startsWith('```json')) {
+    jsonText = jsonText.slice(7);
+  } else if (jsonText.startsWith('```')) {
+    jsonText = jsonText.slice(3);
+  }
+  if (jsonText.endsWith('```')) {
+    jsonText = jsonText.slice(0, -3);
+  }
+  jsonText = jsonText.trim();
+  
+  // Fix unescaped newlines inside strings
+  let inString = false;
+  let escaped = false;
+  let result = '';
+  
+  for (let i = 0; i < jsonText.length; i++) {
+    const char = jsonText[i];
+    
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escaped = true;
+      result += char;
+      continue;
+    }
+    
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+    
+    if (inString && (char === '\n' || char === '\r')) {
+      result += char === '\n' ? '\\n' : '\\r';
+      continue;
+    }
+    
+    if (inString && char === '\t') {
+      result += '\\t';
+      continue;
+    }
+    
+    result += char;
+  }
+  
+  // Repair truncated JSON
+  if (!result.trim().endsWith('}')) {
+    let bracketCount = 0;
+    let braceCount = 0;
+    for (const c of result) {
+      if (c === '{') braceCount++;
+      if (c === '}') braceCount--;
+      if (c === '[') bracketCount++;
+      if (c === ']') bracketCount--;
+    }
+    if (inString) result += '"';
+    while (bracketCount > 0) { result += ']'; bracketCount--; }
+    while (braceCount > 0) { result += '}'; braceCount--; }
+  }
+  
+  return JSON.parse(result);
+}
 
-Generate a brand new, unique NYT-style Connections puzzle that is DIFFERENT from all examples above.
-
-RULES:
-- 4 categories with exactly 4 words each (16 words total)
-- Yellow (difficulty 0): Easiest, most obvious connection
-- Green (difficulty 1): Slightly harder
-- Blue (difficulty 2): Tricky, might have red herrings
-- Purple (difficulty 3): Hardest, often wordplay or "___ WORD" format
-- All 16 words must be UNIQUE (no repeats)
-- Words should be single words, UPPERCASE, max 10 characters
-- Categories should be clever but solvable
-- Avoid words from the examples above
-
-Return ONLY valid JSON in this exact format:
-{
-  "categories": [
-    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 0 },
-    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 1 },
-    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 2 },
-    { "name": "CATEGORY NAME", "words": ["WORD1", "WORD2", "WORD3", "WORD4"], "difficulty": 3 }
-  ]
-}`;
-
-  const result = await callOpenAI(
-    'You are an expert puzzle creator for the New York Times. Create clever, fair word puzzles.',
-    prompt
-  );
+async function generateConnectionsPuzzle(): Promise<any> {
+  console.log('Generating Connections puzzle with prompt ID...');
+  
+  const result = await callResponsesAPI(PROMPT_IDS.connections, "Generate a new Connections puzzle", 2000);
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(cleaned);
+      return parseAIJson(result);
     } catch (e) {
       console.error('Failed to parse Connections JSON:', e);
     }
@@ -301,52 +166,13 @@ Return ONLY valid JSON in this exact format:
 }
 
 async function generateMiniCrossword(): Promise<any> {
-  console.log('Generating Mini Crossword with AI...');
+  console.log('Generating Mini Crossword with prompt ID...');
 
-  const prompt = `Generate a 5x5 mini crossword puzzle like the NYT Mini.
-
-RULES:
-- 5x5 grid where "." represents black/blocked squares
-- Black squares should create valid crossword symmetry (180-degree rotational symmetry)
-- All white cells must be connected
-- Every row and column with white cells must have at least one word
-- Words must be real English words, at least 3 letters
-- Clues should be clever but fair, similar to NYT style
-
-Return ONLY valid JSON in this exact format:
-{
-  "grid": [
-    ["L","E","A","P","S"],
-    ["A","V","E","R","T"],
-    ["S","E","E",".","."],
-    ["T","R","Y",".","A"],
-    [".",".",".","F","T"]
-  ],
-  "clues": {
-    "across": [
-      { "number": 1, "clue": "Clue text here", "answer": "LEAPS", "row": 0, "col": 0 },
-      { "number": 6, "clue": "Clue text", "answer": "AVERT", "row": 1, "col": 0 }
-    ],
-    "down": [
-      { "number": 1, "clue": "Clue text", "answer": "LAST", "row": 0, "col": 0 },
-      { "number": 2, "clue": "Clue text", "answer": "EVER", "row": 0, "col": 1 }
-    ]
-  }
-}
-
-Generate a completely different puzzle with proper symmetry and interlocking words. Number clues starting from 1, going left-to-right, top-to-bottom for each word start position.`;
-
-  const result = await callOpenAI(
-    'You are an expert crossword puzzle constructor for the New York Times.',
-    prompt,
-    2000
-  );
+  const result = await callResponsesAPI(PROMPT_IDS.mini, "Generate a new Mini Crossword puzzle", 2000);
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed = JSON.parse(cleaned);
-      // Validate grid is 5x5
+      const parsed = parseAIJson(result);
       if (parsed.grid && parsed.grid.length === 5 && parsed.grid[0].length === 5) {
         return parsed;
       }
@@ -383,39 +209,13 @@ Generate a completely different puzzle with proper symmetry and interlocking wor
 }
 
 async function generateCrossword(): Promise<any> {
-  console.log('Generating Full Crossword with AI...');
+  console.log('Generating Full Crossword with prompt ID...');
 
-  const prompt = `Generate a 15x15 crossword puzzle grid and clues in NYT style.
-
-RULES:
-- 15x15 grid where "." represents black squares
-- Must have 180-degree rotational symmetry
-- All white cells must be connected
-- No 2-letter words (minimum 3 letters)
-- Should have approximately 30-40 clues across and 30-40 down
-- Real English words only
-
-Return ONLY valid JSON with:
-{
-  "grid": [15 arrays of 15 characters each, using uppercase letters and "." for black],
-  "clues": {
-    "across": [{ "number": 1, "clue": "text", "answer": "WORD", "row": 0, "col": 0 }, ...],
-    "down": [{ "number": 1, "clue": "text", "answer": "WORD", "row": 0, "col": 0 }, ...]
-  }
-}
-
-Create a solvable puzzle with clever clues.`;
-
-  const result = await callOpenAI(
-    'You are an expert crossword constructor for the New York Times.',
-    prompt,
-    8000
-  );
+  const result = await callResponsesAPI(PROMPT_IDS.crossword, "Generate a new 15x15 Crossword puzzle", 8000);
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = parseAIJson(result);
       if (parsed.grid && parsed.grid.length === 15) {
         return parsed;
       }
@@ -427,63 +227,30 @@ Create a solvable puzzle with clever clues.`;
   // Generate a simple valid 15x15 grid as fallback
   const fallbackGrid = Array(15).fill(null).map((_, r) => {
     return Array(15).fill(null).map((_, c) => {
-      // Create a simple pattern with some black squares
       if ((r === 4 || r === 10) && (c === 4 || c === 10)) return '.';
       if ((r === 7) && (c === 0 || c === 14)) return '.';
       if ((r === 0 || r === 14) && (c === 7)) return '.';
-      return 'A'; // Placeholder
+      return 'A';
     });
   });
 
   return {
     grid: fallbackGrid,
     clues: {
-      across: [
-        { number: 1, clue: "First word", answer: "AAAA", row: 0, col: 0 }
-      ],
-      down: [
-        { number: 1, clue: "First down", answer: "AAAA", row: 0, col: 0 }
-      ]
+      across: [{ number: 1, clue: "First word", answer: "AAAA", row: 0, col: 0 }],
+      down: [{ number: 1, clue: "First down", answer: "AAAA", row: 0, col: 0 }]
     }
   };
 }
 
 async function generateSpellingBee(): Promise<any> {
-  console.log('Generating Spelling Bee with AI...');
+  console.log('Generating Spelling Bee with prompt ID...');
 
-  const prompt = `Generate an NYT-style Spelling Bee puzzle.
-
-RULES:
-- Pick 7 unique letters (one center letter, 6 outer letters)
-- Center letter MUST be used in every word
-- Only use common letters that form many words
-- List ALL valid English words (4+ letters) using ONLY those 7 letters
-- Words can repeat letters
-- Identify pangrams (words using all 7 letters)
-- Only include REAL, common English dictionary words
-- Aim for 20-50 valid words
-- Each word must be at least 4 letters
-
-Return ONLY valid JSON:
-{
-  "centerLetter": "A",
-  "outerLetters": ["B","C","D","E","F","G"],
-  "validWords": ["BEAD", "CAGE", "DECADE", ...all valid words...],
-  "pangrams": ["ABCDEFG", ...]
-}
-
-Common good letter sets include vowel-heavy combinations like AEILNRT, AEINRST, AELNOST.`;
-
-  const result = await callOpenAI(
-    'You are an expert Spelling Bee puzzle creator. Only include real English dictionary words.',
-    prompt,
-    3000
-  );
+  const result = await callResponsesAPI(PROMPT_IDS.spellingBee, "Generate a new Spelling Bee puzzle", 3000);
 
   if (result) {
     try {
-      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = parseAIJson(result);
       if (parsed.centerLetter && parsed.outerLetters && parsed.validWords) {
         // Validate words use only the available letters
         const allLetters = [parsed.centerLetter, ...parsed.outerLetters].map((l: string) => l.toUpperCase());
@@ -530,24 +297,9 @@ Common good letter sets include vowel-heavy combinations like AEILNRT, AEINRST, 
 }
 
 async function generateWordleWord(): Promise<string> {
-  console.log('Generating Wordle word with AI...');
+  console.log('Generating Wordle word with prompt ID...');
 
-  const prompt = `Pick a single 5-letter English word for today's Wordle puzzle.
-
-RULES:
-- Must be exactly 5 letters
-- Must be a common, well-known English word
-- Should NOT be obscure, archaic, or slang
-- Should be a word most English speakers would know
-- Pick words that are fair but interesting
-
-Return ONLY the word in uppercase, nothing else. Just the 5-letter word.`;
-
-  const result = await callOpenAI(
-    'You are a Wordle word selector. Pick fair, common 5-letter words.',
-    prompt,
-    50
-  );
+  const result = await callResponsesAPI(PROMPT_IDS.wordle, "Generate a new Wordle word", 50);
 
   if (result) {
     const word = result.trim().toUpperCase().replace(/[^A-Z]/g, '');
@@ -562,7 +314,7 @@ Return ONLY the word in uppercase, nothing else. Just the 5-letter word.`;
 }
 
 async function generatePuzzles(): Promise<Array<{ type: string; data: any }>> {
-  console.log('Generating all puzzles with AI...');
+  console.log('Generating all puzzles with prompt IDs...');
 
   // Generate all puzzles in parallel
   const [connections, mini, crossword, spellingBee, wordleWord] = await Promise.all([
@@ -601,9 +353,10 @@ serve(async (req) => {
 
     console.log(`Generating edition for: ${publishDate}`);
 
-    const generatedText = await callOpenAI(
-      systemPrompt,
-      `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!`,
+    // Generate newspaper content using Responses API with prompt ID
+    const generatedText = await callResponsesAPI(
+      PROMPT_IDS.newspaper,
+      `Generate today's newspaper edition for ${publishDate}`,
       8000
     );
 
@@ -615,75 +368,7 @@ serve(async (req) => {
 
     let content;
     try {
-      let jsonText = generatedText.trim();
-      
-      // Remove markdown code blocks
-      if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.slice(7);
-      } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.slice(3);
-      }
-      if (jsonText.endsWith('```')) {
-        jsonText = jsonText.slice(0, -3);
-      }
-      jsonText = jsonText.trim();
-      
-      // Try to fix common issues: unescaped newlines inside strings
-      let inString = false;
-      let escaped = false;
-      let result = '';
-      
-      for (let i = 0; i < jsonText.length; i++) {
-        const char = jsonText[i];
-        
-        if (escaped) {
-          result += char;
-          escaped = false;
-          continue;
-        }
-        
-        if (char === '\\') {
-          escaped = true;
-          result += char;
-          continue;
-        }
-        
-        if (char === '"') {
-          inString = !inString;
-          result += char;
-          continue;
-        }
-        
-        if (inString && (char === '\n' || char === '\r')) {
-          result += char === '\n' ? '\\n' : '\\r';
-          continue;
-        }
-        
-        if (inString && char === '\t') {
-          result += '\\t';
-          continue;
-        }
-        
-        result += char;
-      }
-      
-      // If JSON appears truncated (doesn't end with }), try to repair it
-      if (!result.trim().endsWith('}')) {
-        console.log('JSON appears truncated, attempting repair...');
-        let bracketCount = 0;
-        let braceCount = 0;
-        for (const c of result) {
-          if (c === '{') braceCount++;
-          if (c === '}') braceCount--;
-          if (c === '[') bracketCount++;
-          if (c === ']') bracketCount--;
-        }
-        if (inString) result += '"';
-        while (bracketCount > 0) { result += ']'; bracketCount--; }
-        while (braceCount > 0) { result += '}'; braceCount--; }
-      }
-      
-      content = JSON.parse(result);
+      content = parseAIJson(generatedText);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
       console.error('First 500 chars of response:', generatedText.substring(0, 500));
@@ -691,8 +376,8 @@ serve(async (req) => {
       throw new Error('Failed to parse AI-generated content as JSON');
     }
 
+    // Set comics to Coming Soon placeholder (no image generation)
     console.log('Setting comics section to Coming Soon placeholder...');
-
     content.comics = [
       {
         title: "COMING SOON",
@@ -747,8 +432,8 @@ serve(async (req) => {
 
     console.log('Edition saved successfully:', data.id);
 
-    // Generate AI-powered game puzzles
-    console.log('Generating AI-powered puzzles...');
+    // Generate AI-powered game puzzles using prompt IDs
+    console.log('Generating AI-powered puzzles with prompt IDs...');
     const puzzles = await generatePuzzles();
     
     for (const puzzle of puzzles) {
