@@ -25,43 +25,21 @@ const ComicsSection = ({ comics }: ComicsSectionProps) => {
       </h4>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {displayComics.map((comic, index) => {
-          const isEmpty = comic.title === "EMPTY";
-          const hasImage = comic.imageUrl && comic.imageUrl.length > 0;
-          
-          return (
-            <div key={index} className="border border-rule">
-              {/* Comic image or placeholder */}
-              <div className="aspect-[4/3] bg-sepia/30 flex items-center justify-center border-b border-rule overflow-hidden">
-                {hasImage ? (
-                  <img 
-                    src={comic.imageUrl} 
-                    alt={comic.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-center p-4">
-                    <span className="font-headline text-4xl text-ink-light">✎</span>
-                    <p className="font-body text-sm text-ink-light italic mt-2">
-                      [Illustration Here]
-                    </p>
-                  </div>
-                )}
-              </div>
-              {/* Caption */}
-              <div className="p-3 text-center">
-                <p className={`font-headline font-semibold text-sm ${isEmpty ? "text-ink-light italic" : "text-headline"}`}>
-                  {comic.title}
-                </p>
-                {comic.caption && (
-                  <p className={`font-body text-xs mt-1 ${isEmpty ? "text-ink-light italic" : "text-ink-light"}`}>
-                    {comic.caption}
-                  </p>
-                )}
-              </div>
+        <div className="border border-rule">
+          <div className="aspect-[4/3] bg-sepia/30 flex items-center justify-center border-b border-rule overflow-hidden">
+            <div className="text-center p-4">
+              <span className="font-headline text-4xl text-ink-light">✎</span>
+              <p className="font-body text-sm text-ink-light italic mt-2">
+                Comics coming soon to the Flynn-Decktor Tribune.
+              </p>
             </div>
-          );
-        })}
+          </div>
+          <div className="p-3 text-center">
+            <p className="font-headline font-semibold text-sm text-headline">
+              COMICS COMING SOON
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Comic Archive Button */}
