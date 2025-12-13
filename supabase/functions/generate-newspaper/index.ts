@@ -7,6 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -149,8 +150,8 @@ Return a JSON object with this exact structure:
     { "title": "PERSONALS", "text": "Unhinged personal ad from a character" }
   ],
   "comics": [
-    { "title": "HILARIOUS COMIC TITLE", "caption": "Setup for visual comedy" },
-    { "title": "ANOTHER COMIC", "caption": "More visual comedy" }
+    { "title": "HILARIOUS COMIC TITLE", "caption": "Setup for visual comedy", "imagePrompt": "Detailed prompt: satirical editorial cartoon in classic 1920s style showing [specific scene with named characters doing something absurd]" },
+    { "title": "ANOTHER COMIC", "caption": "More visual comedy", "imagePrompt": "Detailed prompt: satirical editorial cartoon showing [another scene with different characters]" }
   ],
   "vintageAds": [
     { "headline": "FAKE PRODUCT", "tagline": "Ridiculous tagline", "description": "Snake oil endorsed by a cast member", "price": "$X.XX" },
@@ -167,6 +168,7 @@ Return a JSON object with this exact structure:
 IMPORTANT: 
 - Return ONLY valid JSON, no markdown
 - Be EXTREMELY funny and use the FULL CAST of characters
+- Comics imagePrompt should reference specific characters by name
 - Reference AI, social media, crypto, hustle culture, political chaos
 - Make every single item genuinely hilarious!`;
 
@@ -213,7 +215,48 @@ SET 19: YELLOW — Things Made of Wood (LUMBER, TIMBER, PLANK, BOARD) | GREEN �
 
 SET 20: YELLOW — Types of Bumps (LUMP, KNOT, NUB, WELT) | GREEN — "Very Hot" Words (SCALDING, SEARING, BLAZING, FIERY) | BLUE — Words Ending in "-TIME" (NIGHT, PART, RUN, LIFE) | PURPLE — ___ SLEEPER (HEAVY, LIGHT, DEEP, SILENT)`;
 
-// Removed generateComicImage function - no longer used
+async function generateComicImage(prompt: string): Promise<string | null> {
+  try {
+    console.log('Generating comic image...');
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-image-preview',
+        messages: [
+          { 
+            role: 'user', 
+            content: `Create a black and white editorial cartoon in a classic 1920s newspaper style. Simple bold linework, crosshatching for shading. Satirical and funny. The scene: ${prompt}` 
+          }
+        ],
+        modalities: ['image', 'text']
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Image generation failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    
+    if (imageUrl) {
+      console.log('Comic image generated successfully');
+      return imageUrl;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error generating comic image:', error);
+    return null;
+  }
+}
+
 async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<string | null> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -590,6 +633,10 @@ serve(async (req) => {
   try {
     console.log('Starting newspaper generation...');
 
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured');
     }
@@ -601,14 +648,46 @@ serve(async (req) => {
 
     console.log(`Generating edition for: ${publishDate}`);
 
-    const generatedText = await callOpenAI(
-      systemPrompt,
-      `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!`,
-      8000
-    );
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Generate today's EXTREMELY SATIRICAL newspaper edition for ${publishDate}. USE THE FULL CAST OF CHARACTERS: Mayor Dektor, Mr. Whiskers, General Flynn, Gerald the Pigeon, Potholio the Sentient Pothole, Councilman Blatherskite, Chip the Roomba, and Brenda Newsworthy. Make it HILARIOUS. Reference current absurd trends. GO ABSOLUTELY UNHINGED. Every character should appear at least once across the paper!` }
+        ],
+        max_tokens: 8000,
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI Gateway error:', aiResponse.status, errorText);
+      
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const generatedText = aiData.choices?.[0]?.message?.content;
 
     if (!generatedText) {
-      throw new Error('No content generated from OpenAI');
+      throw new Error('No content generated from AI');
     }
 
     console.log('AI response received, parsing JSON...');
@@ -694,12 +773,18 @@ serve(async (req) => {
     console.log('Content parsed, generating comic images...');
 
     if (content.comics && Array.isArray(content.comics)) {
-      // Remove imagePrompt from comics since we're not generating images
-      content.comics = content.comics.map((comic: any) => ({
-        title: comic.title,
-        caption: comic.caption
-      }));
-      console.log('Comics processed');
+      const comicsWithImages = await Promise.all(
+        content.comics.map(async (comic: any) => {
+          const imagePrompt = comic.imagePrompt || `${comic.title}: ${comic.caption}`;
+          const imageUrl = await generateComicImage(imagePrompt);
+          return {
+            ...comic,
+            imageUrl: imageUrl
+          };
+        })
+      );
+      content.comics = comicsWithImages;
+      console.log('Comic images generated');
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
@@ -716,6 +801,7 @@ serve(async (req) => {
         edition_id: oldEdition.id,
         title: comic.title,
         caption: comic.caption,
+        image_url: comic.imageUrl,
         publish_date: oldEdition.publish_date,
       }));
       await supabase.from('comic_archive').insert(comicsToArchive);
