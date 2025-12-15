@@ -15,8 +15,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const PROMPT_IDS = {
   newspaper: { id: "pmpt_693d801184f881949331e4368a97af3806c501321688733a", version: "2" },
   connections: { id: "pmpt_693d8086e790819790809c7545cb71c40fb6aa30ab342204", version: "2" },
-  mini: { id: "pmpt_693d82139b38819692fc20bb62c9726f0cb9a0f39559a71c", version: "2" },
-  crossword: { id: "pmpt_693d834df35081979aeafe00d07bc92d0774a968558c829a", version: "1" },
+  mini: { id: "pmpt_693d82139b38819692fc20bb62c9726f0cb9a0f39559a71c", version: "3" },
+  crossword: { id: "pmpt_693d834df35081979aeafe00d07bc92d0774a968558c829a", version: "2" },
   spellingBee: { id: "pmpt_693d83cc46dc8190b277db44151802e90592b50c1e5feb76", version: "1" },
   wordle: { id: "pmpt_693d8414a9708195b840709ff56e9de10844ec996b371103", version: "1" },
 };
