@@ -69,20 +69,82 @@ async function callResponsesAPI(promptId: { id: string; version: string }, input
   }
 }
 
-// Parse JSON from AI response, handling markdown code blocks
+// Parse JSON from AI response, handling markdown code blocks and conversational text
 function parseAIJson(text: string): any {
   let jsonText = text.trim();
   
   // Remove markdown code blocks
-  if (jsonText.startsWith('```json')) {
-    jsonText = jsonText.slice(7);
-  } else if (jsonText.startsWith('```')) {
-    jsonText = jsonText.slice(3);
-  }
-  if (jsonText.endsWith('```')) {
-    jsonText = jsonText.slice(0, -3);
+  if (jsonText.includes('```json')) {
+    const start = jsonText.indexOf('```json') + 7;
+    const end = jsonText.indexOf('```', start);
+    jsonText = end > start ? jsonText.slice(start, end) : jsonText.slice(start);
+  } else if (jsonText.includes('```')) {
+    const start = jsonText.indexOf('```') + 3;
+    const end = jsonText.indexOf('```', start);
+    jsonText = end > start ? jsonText.slice(start, end) : jsonText.slice(start);
   }
   jsonText = jsonText.trim();
+  
+  // Find the first { or [ to extract JSON from conversational text
+  const firstBrace = jsonText.indexOf('{');
+  const firstBracket = jsonText.indexOf('[');
+  
+  if (firstBrace === -1 && firstBracket === -1) {
+    throw new Error('No JSON object or array found in response');
+  }
+  
+  // Start from whichever comes first (if both exist)
+  let startIndex: number;
+  let isObject: boolean;
+  
+  if (firstBrace === -1) {
+    startIndex = firstBracket;
+    isObject = false;
+  } else if (firstBracket === -1) {
+    startIndex = firstBrace;
+    isObject = true;
+  } else {
+    startIndex = Math.min(firstBrace, firstBracket);
+    isObject = firstBrace < firstBracket;
+  }
+  
+  // Find the matching closing brace/bracket
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let endIndex = startIndex;
+  
+  for (let i = startIndex; i < jsonText.length; i++) {
+    const char = jsonText[i];
+    
+    if (esc) {
+      esc = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      esc = true;
+      continue;
+    }
+    
+    if (char === '"') {
+      inStr = !inStr;
+      continue;
+    }
+    
+    if (!inStr) {
+      if (char === '{' || char === '[') depth++;
+      if (char === '}' || char === ']') {
+        depth--;
+        if (depth === 0) {
+          endIndex = i + 1;
+          break;
+        }
+      }
+    }
+  }
+  
+  jsonText = jsonText.slice(startIndex, endIndex);
   
   // Fix unescaped newlines inside strings
   let inString = false;
