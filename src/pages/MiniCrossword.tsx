@@ -63,7 +63,7 @@ const MiniCrossword = () => {
         if (puzzleData?.puzzle_data) {
           const p = puzzleData.puzzle_data as unknown as MiniPuzzle;
           setPuzzle(p);
-          setUserGrid(p.grid.map(row => row.map(cell => cell === '.' ? '.' : '')));
+          setUserGrid(p.grid.map(row => row.map(cell => (cell === '.' || cell === '#') ? '#' : '')));
           setTimerRunning(true);
         }
       }
@@ -80,7 +80,7 @@ const MiniCrossword = () => {
   };
 
   const handleCellClick = (row: number, col: number) => {
-    if (!puzzle || puzzle.grid[row][col] === '.') return;
+    if (!puzzle || puzzle.grid[row][col] === '.' || puzzle.grid[row][col] === '#') return;
     
     if (selectedCell && selectedCell[0] === row && selectedCell[1] === col) {
       setDirection(d => d === 'across' ? 'down' : 'across');
@@ -98,7 +98,7 @@ const MiniCrossword = () => {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       for (let r = row - 1; r >= 0; r--) {
-        if (puzzle.grid[r][col] !== '.') {
+        if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
           setSelectedCell([r, col]);
           setDirection('down');
           break;
@@ -107,7 +107,7 @@ const MiniCrossword = () => {
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       for (let r = row + 1; r < 5; r++) {
-        if (puzzle.grid[r][col] !== '.') {
+        if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
           setSelectedCell([r, col]);
           setDirection('down');
           break;
@@ -116,7 +116,7 @@ const MiniCrossword = () => {
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
       for (let c = col - 1; c >= 0; c--) {
-        if (puzzle.grid[row][c] !== '.') {
+        if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
           setSelectedCell([row, c]);
           setDirection('across');
           break;
@@ -125,7 +125,7 @@ const MiniCrossword = () => {
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
       for (let c = col + 1; c < 5; c++) {
-        if (puzzle.grid[row][c] !== '.') {
+        if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
           setSelectedCell([row, c]);
           setDirection('across');
           break;
@@ -138,7 +138,7 @@ const MiniCrossword = () => {
         // Move back
         if (direction === 'across' && col > 0) {
           for (let c = col - 1; c >= 0; c--) {
-            if (puzzle.grid[row][c] !== '.') {
+            if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
               newGrid[row][c] = '';
               setSelectedCell([row, c]);
               break;
@@ -146,7 +146,7 @@ const MiniCrossword = () => {
           }
         } else if (direction === 'down' && row > 0) {
           for (let r = row - 1; r >= 0; r--) {
-            if (puzzle.grid[r][col] !== '.') {
+            if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
               newGrid[r][col] = '';
               setSelectedCell([r, col]);
               break;
@@ -166,14 +166,14 @@ const MiniCrossword = () => {
       // Auto-advance
       if (direction === 'across') {
         for (let c = col + 1; c < 5; c++) {
-          if (puzzle.grid[row][c] !== '.') {
+          if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
             setSelectedCell([row, c]);
             break;
           }
         }
       } else {
         for (let r = row + 1; r < 5; r++) {
-          if (puzzle.grid[r][col] !== '.') {
+          if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
             setSelectedCell([r, col]);
             break;
           }
@@ -194,7 +194,7 @@ const MiniCrossword = () => {
     if (!puzzle) return;
     
     const isComplete = grid.every((row, r) =>
-      row.every((cell, c) => puzzle.grid[r][c] === '.' || cell === puzzle.grid[r][c])
+      row.every((cell, c) => puzzle.grid[r][c] === '.' || puzzle.grid[r][c] === '#' || cell === puzzle.grid[r][c])
     );
     
     if (isComplete) {
@@ -226,14 +226,14 @@ const MiniCrossword = () => {
       if (row !== sr) return false;
       // Find word bounds
       let start = sc, end = sc;
-      while (start > 0 && puzzle.grid[row][start - 1] !== '.') start--;
-      while (end < 4 && puzzle.grid[row][end + 1] !== '.') end++;
+      while (start > 0 && puzzle.grid[row][start - 1] !== '.' && puzzle.grid[row][start - 1] !== '#') start--;
+      while (end < 4 && puzzle.grid[row][end + 1] !== '.' && puzzle.grid[row][end + 1] !== '#') end++;
       return col >= start && col <= end;
     } else {
       if (col !== sc) return false;
       let start = sr, end = sr;
-      while (start > 0 && puzzle.grid[start - 1][col] !== '.') start--;
-      while (end < 4 && puzzle.grid[end + 1][col] !== '.') end++;
+      while (start > 0 && puzzle.grid[start - 1][col] !== '.' && puzzle.grid[start - 1][col] !== '#') start--;
+      while (end < 4 && puzzle.grid[end + 1][col] !== '.' && puzzle.grid[end + 1][col] !== '#') end++;
       return row >= start && row <= end;
     }
   };
@@ -286,7 +286,7 @@ const MiniCrossword = () => {
           <div className="grid grid-cols-5 gap-0 border-2 border-headline">
             {puzzle.grid.map((row, r) =>
               row.map((cell, c) => {
-                const isBlack = cell === '.';
+                const isBlack = cell === '.' || cell === '#';
                 const isSelected = selectedCell?.[0] === r && selectedCell?.[1] === c;
                 const highlighted = isHighlighted(r, c);
                 const cellNumber = getCellNumber(r, c);

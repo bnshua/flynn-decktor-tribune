@@ -66,7 +66,7 @@ const Crossword = () => {
         if (puzzleData?.puzzle_data) {
           const p = puzzleData.puzzle_data as unknown as CrosswordPuzzle;
           setPuzzle(p);
-          setUserGrid(p.grid.map(row => row.map(cell => cell === '.' ? '.' : '')));
+          setUserGrid(p.grid.map(row => row.map(cell => (cell === '.' || cell === '#') ? '#' : '')));
           setTimerRunning(true);
         }
       }
@@ -87,7 +87,7 @@ const Crossword = () => {
   };
 
   const handleCellClick = (row: number, col: number) => {
-    if (!puzzle || puzzle.grid[row][col] === '.') return;
+    if (!puzzle || puzzle.grid[row][col] === '.' || puzzle.grid[row][col] === '#') return;
     
     if (selectedCell && selectedCell[0] === row && selectedCell[1] === col) {
       setDirection(d => d === 'across' ? 'down' : 'across');
@@ -105,7 +105,7 @@ const Crossword = () => {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       for (let r = row - 1; r >= 0; r--) {
-        if (puzzle.grid[r][col] !== '.') {
+        if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
           setSelectedCell([r, col]);
           setDirection('down');
           break;
@@ -114,7 +114,7 @@ const Crossword = () => {
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       for (let r = row + 1; r < GRID_SIZE; r++) {
-        if (puzzle.grid[r][col] !== '.') {
+        if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
           setSelectedCell([r, col]);
           setDirection('down');
           break;
@@ -123,7 +123,7 @@ const Crossword = () => {
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
       for (let c = col - 1; c >= 0; c--) {
-        if (puzzle.grid[row][c] !== '.') {
+        if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
           setSelectedCell([row, c]);
           setDirection('across');
           break;
@@ -132,7 +132,7 @@ const Crossword = () => {
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
       for (let c = col + 1; c < GRID_SIZE; c++) {
-        if (puzzle.grid[row][c] !== '.') {
+        if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
           setSelectedCell([row, c]);
           setDirection('across');
           break;
@@ -144,7 +144,7 @@ const Crossword = () => {
       if (newGrid[row][col] === '') {
         if (direction === 'across' && col > 0) {
           for (let c = col - 1; c >= 0; c--) {
-            if (puzzle.grid[row][c] !== '.') {
+            if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
               newGrid[row][c] = '';
               setSelectedCell([row, c]);
               break;
@@ -152,7 +152,7 @@ const Crossword = () => {
           }
         } else if (direction === 'down' && row > 0) {
           for (let r = row - 1; r >= 0; r--) {
-            if (puzzle.grid[r][col] !== '.') {
+            if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
               newGrid[r][col] = '';
               setSelectedCell([r, col]);
               break;
@@ -171,14 +171,14 @@ const Crossword = () => {
       
       if (direction === 'across') {
         for (let c = col + 1; c < GRID_SIZE; c++) {
-          if (puzzle.grid[row][c] !== '.') {
+          if (puzzle.grid[row][c] !== '.' && puzzle.grid[row][c] !== '#') {
             setSelectedCell([row, c]);
             break;
           }
         }
       } else {
         for (let r = row + 1; r < GRID_SIZE; r++) {
-          if (puzzle.grid[r][col] !== '.') {
+          if (puzzle.grid[r][col] !== '.' && puzzle.grid[r][col] !== '#') {
             setSelectedCell([r, col]);
             break;
           }
@@ -198,7 +198,7 @@ const Crossword = () => {
     if (!puzzle) return;
     
     const isComplete = grid.every((row, r) =>
-      row.every((cell, c) => puzzle.grid[r][c] === '.' || cell === puzzle.grid[r][c])
+      row.every((cell, c) => puzzle.grid[r][c] === '.' || puzzle.grid[r][c] === '#' || cell === puzzle.grid[r][c])
     );
     
     if (isComplete) {
@@ -229,14 +229,14 @@ const Crossword = () => {
     if (direction === 'across') {
       if (row !== sr) return false;
       let start = sc, end = sc;
-      while (start > 0 && puzzle.grid[row][start - 1] !== '.') start--;
-      while (end < GRID_SIZE - 1 && puzzle.grid[row][end + 1] !== '.') end++;
+      while (start > 0 && puzzle.grid[row][start - 1] !== '.' && puzzle.grid[row][start - 1] !== '#') start--;
+      while (end < GRID_SIZE - 1 && puzzle.grid[row][end + 1] !== '.' && puzzle.grid[row][end + 1] !== '#') end++;
       return col >= start && col <= end;
     } else {
       if (col !== sc) return false;
       let start = sr, end = sr;
-      while (start > 0 && puzzle.grid[start - 1][col] !== '.') start--;
-      while (end < GRID_SIZE - 1 && puzzle.grid[end + 1][col] !== '.') end++;
+      while (start > 0 && puzzle.grid[start - 1][col] !== '.' && puzzle.grid[start - 1][col] !== '#') start--;
+      while (end < GRID_SIZE - 1 && puzzle.grid[end + 1][col] !== '.' && puzzle.grid[end + 1][col] !== '#') end++;
       return row >= start && row <= end;
     }
   };
@@ -303,7 +303,7 @@ const Crossword = () => {
               <div className="grid gap-0 border-2 border-headline" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}>
                 {puzzle.grid.map((row, r) =>
                   row.map((cell, c) => {
-                    const isBlack = cell === '.';
+                    const isBlack = cell === '.' || cell === '#';
                     const isSelected = selectedCell?.[0] === r && selectedCell?.[1] === c;
                     const highlighted = isHighlighted(r, c);
                     const cellNumber = getCellNumber(r, c);
