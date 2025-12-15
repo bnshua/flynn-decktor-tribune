@@ -12,6 +12,7 @@ import VintageAds from "@/components/newspaper/VintageAds";
 import ObituariesSection from "@/components/newspaper/ObituariesSection";
 import LetterSubmissionForm from "@/components/newspaper/LetterSubmissionForm";
 import Footer from "@/components/newspaper/Footer";
+import { FlynnVoiceChat } from "@/components/newspaper/FlynnVoiceChat";
 import { Loader2, Star } from "lucide-react";
 import { getLatestEdition, NewspaperContent } from "@/lib/newspaper";
 import { supabase } from "@/integrations/supabase/client";
@@ -326,6 +327,8 @@ const Index = () => {
 
         <Footer />
       </div>
+      
+      <FlynnVoiceChat />
     </div>
   );
 };

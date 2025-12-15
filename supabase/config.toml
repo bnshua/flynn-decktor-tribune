@@ -5,3 +5,15 @@ verify_jwt = false
 
 [functions.get-newspaper]
 verify_jwt = false
+
+[functions.get-letter-submissions]
+verify_jwt = false
+
+[functions.update-letter-submission]
+verify_jwt = false
+
+[functions.delete-letter-submission]
+verify_jwt = false
+
+[functions.realtime-chat]
+verify_jwt = false
