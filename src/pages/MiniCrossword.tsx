@@ -61,7 +61,12 @@ const MiniCrossword = () => {
           .maybeSingle();
 
         if (puzzleData?.puzzle_data) {
-          const p = puzzleData.puzzle_data as unknown as MiniPuzzle;
+          const raw = puzzleData.puzzle_data as any;
+          // Handle both structures: {clues: {across, down}} OR {across, down} at top level
+          const p: MiniPuzzle = {
+            grid: raw.grid,
+            clues: raw.clues || { across: raw.across || [], down: raw.down || [] }
+          };
           setPuzzle(p);
           setUserGrid(p.grid.map(row => row.map(cell => (cell === '.' || cell === '#') ? '#' : '')));
           setTimerRunning(true);
