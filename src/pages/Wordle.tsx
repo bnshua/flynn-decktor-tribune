@@ -53,6 +53,8 @@ const Wordle = () => {
           .select('puzzle_data')
           .eq('edition_id', edition.id)
           .eq('game_type', 'wordle')
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (puzzleData?.puzzle_data) {

@@ -55,6 +55,8 @@ const Connections = () => {
           .select('puzzle_data')
           .eq('edition_id', edition.id)
           .eq('game_type', 'connections')
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (puzzleData?.puzzle_data) {
