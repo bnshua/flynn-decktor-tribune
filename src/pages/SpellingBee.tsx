@@ -39,6 +39,8 @@ const SpellingBee = () => {
           .select('puzzle_data')
           .eq('edition_id', edition.id)
           .eq('game_type', 'spelling_bee')
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (puzzleData?.puzzle_data) {
